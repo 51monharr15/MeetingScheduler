@@ -2525,7 +2525,8 @@
           <input type="hidden" name="timezone" value="${escapeHtml(mtz)}">
           <fieldset class="options-fieldset"${canEdit ? '' : ' disabled'}>
           <details ${paneDetailsAttrs(state, 'opts-length', { extraClass: 'tint-dates' })}>
-            <summary class="pane-summary-with-save"><span>Meeting length &amp; calendar</span>${canEdit ? headerSaveBtn : ''}</summary>
+            <summary>Meeting length &amp; calendar</summary>
+            ${canEdit ? `<div class="pane-save-row pane-save-below-summary">${headerSaveBtn}</div>` : ''}
             <div class="pane-details-body">
             <div class="form-grid">
               <label>Title<input name="title" value="${escapeHtml(m.title)}"></label>
@@ -2544,7 +2545,8 @@
             </div>
           </details>
           <details ${paneDetailsAttrs(state, 'opts-booking', { extraClass: 'tint-dates' })}>
-            <summary class="pane-summary-with-save"><span>Bookable dates &amp; daily hours</span>${canEdit ? headerSaveBtn : ''}</summary>
+            <summary>Bookable dates &amp; daily hours</summary>
+            ${canEdit ? `<div class="pane-save-row pane-save-below-summary">${headerSaveBtn}</div>` : ''}
             <div class="pane-details-body">
             <p class="meta">Daily hours are edited in <strong>your</strong> local timezone (${escapeHtml(tz)}) and stored in UTC so everyone sees consistent local times. Meeting base timezone (first attendee): ${escapeHtml(mtz)}.</p>
             <div class="options-booking-grid">
