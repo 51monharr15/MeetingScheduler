@@ -2335,29 +2335,18 @@
         <td class="attach-cell-content">${canEdit
           ? `<textarea class="attach-cell" data-attach-field="content" rows="4" placeholder="URL or text (simple HTML)">${escapeHtml(content)}</textarea>`
           : renderAttachFieldDisplay(state, att.id, content, { readOnly: true })}</td>
-        ${canEdit ? `<td class="attach-cell-action"><button type="button" class="btn compact-btn" data-action="save-attachment-row" title="Save this attachment (or tap outside the fields)">Save</button></td>` : ''}
+        ${canEdit ? `<td class="attach-cell-action"><button type="button" class="compact-btn" data-action="save-attachment-row" title="Save this attachment (or tap outside the fields)">Save</button></td>` : ''}
       </tr>`;
     }).join('');
-    const addBlock = canEdit ? `
-      <div class="attach-add-block" data-attachment-row data-attachment-id="">
-        <p class="meta"><strong>Add attachment</strong></p>
-        <label class="attach-add-label">Label
-          <input type="text" class="attach-cell" data-attach-field="label" placeholder="Add new…">
-        </label>
-        <label class="attach-add-label">Content
-          <textarea class="attach-cell" data-attach-field="content" rows="4" placeholder="URL or text (simple HTML)"></textarea>
-        </label>
-        <div class="attach-row-actions">
-          <button type="button" class="btn" data-action="save-attachment-row" title="Add this attachment">Add</button>
-        </div>
-      </div>` : '<p class="meta">Sign in on <strong>Attendees</strong> to add attachments.</p>';
-    const table = (m.attachments || []).length || !canEdit
-      ? `<div class="attachments-table-scroll"><table class="data-table attachments-table">
+    const newRow = canEdit ? `<tr class="attach-row attach-row-new" data-attachment-row data-attachment-id="">
+      <td class="attach-cell-label"><input type="text" class="attach-cell" data-attach-field="label" placeholder="Add new…"></td>
+      <td class="attach-cell-content"><textarea class="attach-cell" data-attach-field="content" rows="4" placeholder="URL or text (simple HTML)"></textarea></td>
+      <td class="attach-cell-action"><button type="button" class="compact-btn" data-action="save-attachment-row" title="Add this attachment (or tap outside the fields)">Add</button></td>
+    </tr>` : '';
+    return `<div class="attachments-table-scroll"><table class="data-table attachments-table">
       <thead><tr><th>Label</th><th>Content</th>${canEdit ? '<th class="attach-action-head"></th>' : ''}</tr></thead>
-      <tbody>${rows || `<tr><td colspan="${canEdit ? 3 : 2}">None yet</td></tr>`}</tbody>
-    </table></div>`
-      : '';
-    return `${addBlock}${table}`;
+      <tbody>${newRow}${rows}</tbody>
+    </table></div>`;
   }
 
   function attachmentRowSnapshotFromAtt(att) {
@@ -2426,16 +2415,12 @@
     const agendaVal = drafts.agenda != null ? drafts.agenda : (m.agenda || []).join('\n');
     const decisionsVal = drafts.decisions != null ? drafts.decisions : (m.decisions || []).join('\n');
     const notesVal = drafts.notes != null ? drafts.notes : (m.notes || '');
-    const saveBtn = () => `<button type="submit" class="btn">Save</button>`;
+    const saveBtn = () => `<button type="submit" class="compact-btn">Save</button>`;
     const attachCount = (m.attachments || []).length;
-    const editBanner = canEditDesc
-      ? `<p class="resources-edit-banner">Signed in as <strong>${escapeHtml(attendeeLabel(attendee))}</strong> — <strong>Save</strong> appears at the top and bottom of each blue pane.</p>`
-      : `<p class="resources-edit-banner resources-edit-banner-warn">Not signed in on this browser — that is why there is no <strong>Save</strong> and no blank attachment row. <button type="button" class="btn-nav compact-btn" data-action="tab" data-tab="attendees">Go to Attendees</button> and sign in, then return here.</p>`;
 
     return `
       <section class="panel stack" id="meeting-agenda-pane">
         <p class="meta pane-lead">Description, agenda, decisions, notes, and attachments — pre- and post-meeting assets in one place.</p>
-        ${editBanner}
         <details ${paneDetailsAttrs(state, 'mr-description', { extraClass: 'tint-text' })}>
           <summary>Description for attendees <span class="label-hint">(simple HTML — status bar &amp; Overview)</span></summary>
           <div class="pane-details-body">
@@ -2476,7 +2461,7 @@
           <summary>Attachments (${attachCount})</summary>
           <div class="pane-details-body">
             <p class="meta">Preparation or follow-up links/text. Leading spaces on URLs are stripped.</p>
-            ${renderAttachmentsTable(m, state, attendee)}
+            ${canEditDesc || attachCount ? renderAttachmentsTable(m, state, attendee) : '<p class="meta">No attachments yet.</p>'}
           </div>
         </details>
       </section>`;

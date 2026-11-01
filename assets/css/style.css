@@ -2474,63 +2474,6 @@ button.day-head-marked {
   background: #fafafa;
 }
 
-.pane-save-row,
-.pane-save-below-summary {
-  display: flex;
-  justify-content: flex-end;
-  gap: 0.35rem;
-  margin: 0.35rem 0;
-}
-
-.pane-save-row .btn,
-.pane-save-below-summary .btn {
-  display: inline-block;
-  visibility: visible;
-  opacity: 1;
-}
-
-.resources-edit-banner {
-  margin: 0 0 0.65rem;
-  padding: 0.45rem 0.65rem;
-  border: 1px solid #86efac;
-  background: #f0fdf4;
-  border-radius: var(--btn-radius);
-  font-size: 0.9rem;
-}
-
-.resources-edit-banner-warn {
-  border-color: #f59e0b;
-  background: #fffbeb;
-}
-
-.attach-add-block {
-  margin: 0 0 0.75rem;
-  padding: 0.55rem 0.65rem;
-  border: 1px dashed #f59e0b;
-  background: #fffbeb;
-  border-radius: var(--btn-radius);
-}
-
-.attach-add-label {
-  display: grid;
-  gap: 0.25rem;
-  margin: 0.35rem 0;
-  font-size: 0.9rem;
-}
-
-.attach-add-block .attach-cell {
-  width: 100%;
-  box-sizing: border-box;
-  border: 1px solid var(--line);
-  border-radius: 6px;
-  padding: 0.35rem 0.45rem;
-  background: #fff;
-}
-
-.attach-add-block textarea.attach-cell {
-  resize: vertical;
-  min-height: 4.5em;
-}
 
 .loc-expand-btn {
   touch-action: manipulation;

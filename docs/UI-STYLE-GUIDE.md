@@ -57,7 +57,7 @@ A user learns through consistency and then needs less help. Help must **stay ava
 
 ### P7 — Compact UI; clear borders; clear state
 
-Use the minimum space that still works. Border functions clearly so actions and regions separate. Do not spend space on redundant titles/buttons that repeat what the control already is. Display **state changes** clearly.
+**Screen space is precious.** These principles exist because they matter in the live product — they are not optional flavour text. Use the minimum space that still works. Border functions clearly so actions and regions separate. Do not spend space on redundant titles, banners, buttons, or “helpful” chrome that repeats what the control already is or that belongs in a discussion with the owner, not on the page. Display **state changes** clearly.
 
 ### P8 — Constraints and edge cases are declared behaviour
 
