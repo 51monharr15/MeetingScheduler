@@ -237,6 +237,7 @@
       dragSelect: true,
       editingIntro: null,
       headerExpanded: false,
+      statusStripExpanded: localStorage.getItem(statusStripExpandedKey(slug)) === 'yes',
       claimingId: null,
       editingAttendeeId: null,
       editingAttachmentId: null,
@@ -305,6 +306,7 @@
         const row = e.target.closest('[data-attachment-row]');
         if (row) row.dataset.attachSnapshot = attachmentRowSnapshot(row);
       }
+      requestAnimationFrame(() => measureStickyHeader(root));
     });
     root.addEventListener('change', (e) => handleChange(e, root, state));
     root.addEventListener('keydown', (e) => {
@@ -334,6 +336,7 @@
     }
     window.addEventListener('pointerup', () => { state.dragging = false; });
     window.addEventListener('resize', () => {
+      measureStickyHeader(root);
       if (!state.meet) return;
       const active = document.activeElement;
       if (active && (active.tagName === 'INPUT' || active.tagName === 'TEXTAREA' || active.tagName === 'SELECT')) return;
@@ -357,6 +360,7 @@
 
   /** Preferred day columns (3 / 5 / 7). Seven allowed even when weekends are hidden. */
   function dayColsKey(slug) { return `meet_day_cols_${slug}`; }
+  function statusStripExpandedKey(slug) { return `meet_status_strip_expanded_${slug}`; }
 
   function preferredDayCount(state, m) {
     let pref = Number(state?.dayColPref);
@@ -844,16 +848,14 @@
       <div class="meet-shell">
         <div class="sticky-top">
           <div class="sticky-top-inner">
-            <h1 class="meet-title" title="${escapeHtml(m.title)}">${escapeHtml(m.title)}</h1>
-            <div class="sticky-main-row">
-              <div class="sticky-status-col">
-                ${renderMeetingStatus(m, state, attendee)}
-              </div>
+            <div class="sticky-title-row">
+              <h1 class="meet-title" title="${escapeHtml(m.title)}">${escapeHtml(m.title)}</h1>
               <div class="sticky-head-actions">
                 <button type="button" class="compact-btn header-help-btn" data-action="toggle-help" title="How to use this meeting scheduler">How to use this</button>
                 <button type="button" class="compact-btn" data-action="copy-link" title="Copy meeting link">Copy meeting link</button>
               </div>
             </div>
+            ${renderMeetingStatus(m, state, attendee)}
             <nav class="dashboard-nav" aria-label="Meeting sections">
               ${renderDashboardNav(m, state, attendee)}
             </nav>
@@ -897,10 +899,21 @@
     }
   }
 
-  function afterRenderScroll(root, state) {
-    const sticky = root.querySelector('.sticky-top');
+  function measureStickyHeader(root) {
+    const sticky = root?.querySelector?.('.sticky-top') || document.querySelector('.sticky-top');
     if (sticky) {
       document.documentElement.style.setProperty('--sticky-h', `${Math.ceil(sticky.getBoundingClientRect().height)}px`);
+    }
+  }
+
+  function afterRenderScroll(root, state) {
+    measureStickyHeader(root);
+    if (!state._stickyObserver && root) {
+      const sticky = root.querySelector('.sticky-top');
+      if (sticky && typeof ResizeObserver !== 'undefined') {
+        state._stickyObserver = new ResizeObserver(() => measureStickyHeader(root));
+        state._stickyObserver.observe(sticky);
+      }
     }
   }
 
@@ -965,15 +978,15 @@
     const locHtml = locIds.length
       ? `<span class="meta">${locLabel}: ${locIds.map((id) => locationInlineHtml(m, id)).join('; ')}</span>`
       : '<span class="meta">No locations confirmed</span>';
-    return `<div class="status-strip" title="${escapeHtml(STATUS_TIP)}">
-      <div class="status-strip-line">
+    const expanded = !!state.statusStripExpanded;
+    return `<div class="status-strip${expanded ? '' : ' status-strip-collapsed'}" title="${escapeHtml(STATUS_TIP)}">
+      <div class="status-strip-line status-strip-primary">
         ${renderSignedInLine(m, attendee)}
-        <span class="status-label">Status:</span>
-        <span class="status-value">${escapeHtml(label)}</span>
+        <span class="status-pair"><span class="status-label">Status:</span> <span class="status-value">${escapeHtml(label)}</span></span>
         ${timeHtml}
+        <button type="button" class="compact-btn status-strip-toggle" data-action="toggle-status-strip" title="${expanded ? 'Collapse status strip' : 'Expand status strip'}">${expanded ? 'Less ▴' : 'More ▾'}</button>
       </div>
-      <div class="status-strip-line">${locHtml}</div>
-      ${renderStatusExpanders(m)}
+      ${expanded ? `<div class="status-strip-line">${locHtml}</div>${renderStatusExpanders(m)}` : ''}
     </div>`;
   }
 
@@ -992,7 +1005,7 @@
     const attachments = m.attachments || [];
     const notes = (m.notes || '').trim();
     const notesPlain = notes ? notes.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '';
-    const notesPart = notesPlain ? ` · Notes` : '';
+    const notesPart = ` · Notes (${notesPlain ? 'set' : 'none'})`;
     const combinedSummary = `Agenda items (${agenda.length}) · Decisions (${decisions.length}) · Attachments (${attachments.length})${notesPart}`;
 
     const agendaBlock = agenda.length
@@ -2291,18 +2304,18 @@
           ? `<input type="text" class="attach-cell" data-attach-field="label" value="${escapeHtml(att.label)}" placeholder="Label">`
           : escapeHtml(att.label)}</td>
         <td class="attach-cell-content">${canEdit
-          ? `<textarea class="attach-cell" data-attach-field="content" rows="3" placeholder="URL or text (simple HTML)">${escapeHtml(content)}</textarea>`
+          ? `<textarea class="attach-cell" data-attach-field="content" rows="3" placeholder="URL or text (simple HTML)">${escapeHtml(content)}</textarea>
+             <div class="attach-row-actions"><button type="button" class="compact-btn" data-action="save-attachment-row" title="Save this attachment (or tap outside the fields)">Save</button></div>`
           : renderAttachFieldDisplay(state, att.id, content, { readOnly: true })}</td>
-        ${canEdit ? `<td class="attach-cell-action"><button type="button" class="compact-btn" data-action="save-attachment-row" title="Save this attachment (or tap outside the fields)">Save</button></td>` : ''}
       </tr>`;
     }).join('');
     const newRow = canEdit ? `<tr class="attach-row attach-row-new" data-attachment-row data-attachment-id="">
       <td class="attach-cell-label"><input type="text" class="attach-cell" data-attach-field="label" placeholder="Add new…"></td>
-      <td class="attach-cell-content"><textarea class="attach-cell" data-attach-field="content" rows="3" placeholder="URL or text (simple HTML)"></textarea></td>
-      <td class="attach-cell-action"><button type="button" class="compact-btn" data-action="save-attachment-row" title="Add this attachment (or tap outside the fields)">Add</button></td>
+      <td class="attach-cell-content"><textarea class="attach-cell" data-attach-field="content" rows="3" placeholder="URL or text (simple HTML)"></textarea>
+        <div class="attach-row-actions"><button type="button" class="compact-btn" data-action="save-attachment-row" title="Add this attachment (or tap outside the fields)">Add</button></div></td>
     </tr>` : '';
     return `<div class="pane-region-scroll attachments-table-scroll"><table class="data-table attachments-table">
-      <thead><tr><th>Label</th><th>Content</th>${canEdit ? '<th class="attach-action-head"></th>' : ''}</tr></thead>
+      <thead><tr><th>Label</th><th>Content</th></tr></thead>
       <tbody>${newRow}${rows}</tbody>
     </table></div>`;
   }
@@ -2415,7 +2428,7 @@
         <details ${paneDetailsAttrs(state, 'mr-attachments', { extraClass: 'tint-assets' })}>
           <summary>Attachments (${attachCount})</summary>
           <div class="pane-details-body">
-            <p class="meta">Preparation or follow-up links/text. On a phone, tap <strong>Add</strong> or <strong>Save</strong> (or tap outside the field). Leading spaces on URLs are stripped.</p>
+            <p class="meta">Preparation or follow-up links/text. The top blank row adds a new attachment — tap <strong>Add</strong> under it (or tap outside the field). Leading spaces on URLs are stripped.</p>
             ${canEditDesc || attachCount ? renderAttachmentsTable(m, state, attendee) : '<p class="meta">No attachments yet.</p>'}
           </div>
         </details>
@@ -3543,6 +3556,13 @@
       return;
     }
     if (action === 'toggle-header') { state.headerExpanded = !state.headerExpanded; render(root, state); return; }
+
+    if (action === 'toggle-status-strip') {
+      state.statusStripExpanded = !state.statusStripExpanded;
+      localStorage.setItem(statusStripExpandedKey(state.slug), state.statusStripExpanded ? 'yes' : 'no');
+      render(root, state);
+      return;
+    }
 
     if (action === 'preset-duration-am' || action === 'preset-duration-pm') {
       return;

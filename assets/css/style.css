@@ -21,6 +21,10 @@
 
 * { box-sizing: border-box; }
 
+html {
+  scroll-padding-top: calc(var(--sticky-h, 0px) + 0.5rem);
+}
+
 body {
   margin: 0;
   font-family: "Segoe UI", system-ui, sans-serif;
@@ -157,7 +161,7 @@ button.btn-disabled {
   flex-direction: column;
   align-items: stretch;
   gap: 0.2rem;
-  margin: 0;
+  margin: 0 0 0.25rem;
   font-size: 0.88rem;
   padding: 0.35rem 0.55rem;
   background: #f8fafc;
@@ -171,6 +175,28 @@ button.btn-disabled {
   flex-wrap: wrap;
   align-items: baseline;
   gap: 0.25rem 0.65rem;
+}
+
+.status-strip-primary {
+  align-items: center;
+}
+
+.status-pair {
+  white-space: nowrap;
+  display: inline;
+}
+
+.status-strip-toggle {
+  margin-left: auto;
+}
+
+.meet-content input,
+.meet-content textarea,
+.meet-content select,
+.meet-content .pane-details,
+.meet-content .pane-region,
+.meet-content details {
+  scroll-margin-top: calc(var(--sticky-h, 0px) + 0.75rem);
 }
 
 .status-strip .status-label {
@@ -495,7 +521,7 @@ button.linkish {
 .overview-panel .section-title:first-of-type { margin-top: 0; }
 
 .meet-title {
-  margin: 0 0 0.35rem;
+  margin: 0;
   font-size: 1.25rem;
   min-width: 0;
   max-width: 100%;
@@ -507,31 +533,31 @@ button.linkish {
   z-index: 0;
 }
 
-.sticky-main-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: start;
-  gap: 0.4rem 0.65rem;
+.sticky-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.35rem 0.65rem;
+  margin-bottom: 0.35rem;
   min-width: 0;
   position: relative;
   z-index: 2;
 }
 
-.sticky-status-col {
-  min-width: 0;
-}
-
 .sticky-head-actions {
   display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 0.25rem;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem 0.35rem;
   flex-shrink: 0;
   position: relative;
   z-index: 10;
   isolation: isolate;
   pointer-events: auto;
-  max-width: 11rem;
+  margin-left: auto;
 }
 
 .share-row { margin: 0.5rem 0; gap: 0.4rem; }
@@ -550,12 +576,8 @@ button.linkish {
   .sticky-top-inner { padding: 0.5rem 0.65rem; }
   .meet-title { font-size: 1.05rem; }
   .tab { padding: 0.28rem 0.5rem; font-size: 0.72rem; }
-  .sticky-main-row {
-    grid-template-columns: minmax(0, 1fr) auto;
-    gap: 0.35rem 0.45rem;
-  }
-  .sticky-head-actions {
-    max-width: 9.5rem;
+  .sticky-title-row {
+    gap: 0.25rem 0.4rem;
   }
   .dashboard-nav {
     flex-wrap: wrap;
@@ -743,9 +765,10 @@ button.linkish {
   line-height: 1.2;
   min-height: 1.6rem;
   box-sizing: border-box;
-  width: 100%;
+  width: auto;
   text-align: center;
   pointer-events: auto;
+  white-space: nowrap;
 }
 
 .pin-field-wrap {
@@ -2376,21 +2399,39 @@ button.day-head-marked {
   line-height: 1.25;
 }
 
-.attach-cell-label { width: 26%; }
+.attach-cell-label { width: 28%; }
 .attach-cell-content { width: auto; }
-.attach-cell-action,
-.attach-action-head {
-  width: 4.5rem;
-  white-space: nowrap;
-  text-align: right;
-  vertical-align: top;
+
+.attach-row-actions {
+  margin-top: 0.35rem;
+}
+
+.attachments-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fffbeb;
+}
+
+.attach-row-new td {
+  position: sticky;
+  top: 1.6rem;
+  z-index: 1;
+  background: #fafafa;
+}
+
+.attachments-table textarea.attach-cell:focus {
+  max-height: none;
+  min-height: 6em;
+}
+
+.loc-expand-btn {
+  touch-action: manipulation;
 }
 
 .loc-row-save-wrap {
   margin-top: 0.25rem;
 }
-
-.attach-row-new td { background: #fafafa; }
 
 @media (max-width: 600px) {
   .find-meetings-fields { grid-template-columns: 1fr; }
