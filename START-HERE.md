@@ -27,6 +27,7 @@ Open http://localhost:8080/
 | `EDITING.md` | Edit / commit workflow |
 | `GIT.md` | Clone / pull |
 | `UPDATING.md` | Deploy to live |
+| `docs/AGENT-RESTART.md` | Agent handoff + open bugs (read before coding) |
 
 ## Deploy to live
 
