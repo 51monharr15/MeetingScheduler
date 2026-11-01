@@ -1,0 +1,7 @@
+data/meets/*
+data/aliases/*
+!data/meets/.gitkeep
+!data/aliases/.gitkeep
+nohup.out
+*.meet
+.git-ftp-ignore
