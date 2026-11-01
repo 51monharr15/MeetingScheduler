@@ -5,14 +5,12 @@ Use this to try changes before uploading via FTP.
 ## Prerequisites
 
 - PHP 8.1+ installed (`php -v` in Command Prompt)
-- This repo cloned on your machine
+- This repo at `D:\dev\MeetingScheduler`
 
 ## Start the test server
 
-Open Command Prompt or PowerShell:
-
 ```bat
-cd path\to\MeetingScheduler
+cd /d D:\dev\MeetingScheduler
 php -S localhost:8080
 ```
 
@@ -23,36 +21,27 @@ Leave that window open. The server runs until you press Ctrl+C.
 - Home: http://localhost:8080/
 - Test meeting: http://localhost:8080/?my-test-meeting
 
-Create a meeting, join as a user, mark some slots, save — same as on the live server.
-
 ## Where local data is stored
 
-Test meetings are saved to:
-
 ```text
-MeetingScheduler\data\meets\
-MeetingScheduler\data\aliases\
+D:\dev\MeetingScheduler\data\meets\
+D:\dev\MeetingScheduler\data\aliases\
 ```
 
-These are **only on your PC**. They are not uploaded unless you copy them to the server (usually you should not).
+These are **only on your PC**. Do not overwrite live `data/` on the server.
 
 ## Testing after an update
 
-1. Stop the server (Ctrl+C) in the Command Prompt window.
-2. Get new files: in Git Bash run `cd ~/MeetingScheduler` then `git pull`.
-3. Start the server again:
+1. Stop the server (Ctrl+C).
+2. `cd /d D:\dev\MeetingScheduler` then `git pull`.
+3. Start again:
    ```bat
-   cd C:\Users\Nomis\MeetingScheduler
+   cd /d D:\dev\MeetingScheduler
    C:\php\php.exe -S localhost:8080
    ```
 4. Hard-refresh the browser (Ctrl+F5).
 
-## PHP not found?
-
-- Windows: install from https://windows.php.net/download/ or use XAMPP/WAMP.
-- With XAMPP, `php.exe` is often at `C:\xampp\php\php.exe` — use the full path in the command above.
-
 ## Differences from Apache
 
 - Pretty URLs need Apache `mod_rewrite`. Locally use `http://localhost:8080/?slug-name`.
-- Built-in PHP server is fine for development; production should stay on Apache as you have now.
+- Built-in PHP server is fine for development; production should stay on Apache.

@@ -1,0 +1,12 @@
+---
+description: MeetingScheduler location and scope
+alwaysApply: true
+---
+
+# MeetingScheduler
+
+- This repo is the Meet Scheduler app (PHP + plain-text meeting files).
+- Canonical GitHub: https://github.com/51monharr15/MeetingScheduler
+- Canonical local working copy: `D:\dev\MeetingScheduler`
+- Development clones live under `D:\dev\`, not under `C:\Users\...`
+- Describe what this project is; do not pad docs with lists of unrelated things it is not.

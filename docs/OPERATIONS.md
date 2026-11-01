@@ -101,7 +101,7 @@ Expandable panes show **▶** when collapsed and **▼** when open (same visual 
 Serve from the MeetingScheduler directory (the folder that contains `index.php`):
 
 ```bat
-cd path\to\MeetingScheduler
+cd /d D:\dev\MeetingScheduler
 php -S localhost:8000
 ```
 

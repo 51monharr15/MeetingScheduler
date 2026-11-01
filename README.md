@@ -3,7 +3,7 @@
 Self-contained meeting availability picker for Apache + PHP. **No database** — each meeting is stored as a human-readable plain-text file under `data/`.
 
 Canonical repo: **https://github.com/51monharr15/MeetingScheduler**  
-Not part of the SIG Stakeholder Database; it does not use MySQL or stakeholder records.
+Local working copy: **`D:\dev\MeetingScheduler`**
 
 ## Quick start
 
@@ -39,12 +39,10 @@ Meetings use the `@meet v1` plain-text format (see `lib/MeetFile.php`). Example 
 
 Files live at `data/meets/{id}.meet`. Alias mapping at `data/aliases/{slug}.alias`.
 
-User-entered text is sanitised on save so accidental `@@ section` lines or `|` characters in names are unlikely to corrupt the file (see [docs/OPERATIONS.md](docs/OPERATIONS.md)).
-
 ## Apache notes
 
-- `meet/.htaccess` enables pretty URLs and blocks direct access to `data/`
-- `meet/data/.htaccess` denies all HTTP access to stored files
+- `.htaccess` enables pretty URLs and blocks direct access to `data/`
+- `data/.htaccess` denies all HTTP access to stored files
 - Set directory permissions so PHP can write `data/meets/` and `data/aliases/`
 
 ## API
@@ -53,12 +51,8 @@ User-entered text is sanitised on save so accidental `@@ section` lines or `|` c
 
 | Action | Purpose |
 |--------|---------|
-| `create` | Create meeting (title only; random slug returned) |
-| `join` | Register attendee (optional numeric PIN) |
-| `claim` | Sign in as an existing row (PIN if set) |
-| `merge_attendees` | Combine rows (organiser: any two; others: duplicates) |
-| `set_organizer` | Toggle organiser flag on an attendee |
-| `list_meetings` | Find meetings by attendee name + PIN |
+| `create` | Create meeting with slug, title, recurrence |
+| `join` | Register attendee name/id |
 | `save_availability` | Save selected ISO slot times |
 | `add_location` | Propose a location |
 | `save_location_prefs` | Attendee location preferences |
@@ -67,17 +61,3 @@ User-entered text is sanitised on save so accidental `@@ section` lines or `|` c
 | `confirm` | Set confirmed slot/location |
 
 `GET api.php?slug=...` returns the public meeting view.
-
-## Possible future facilities
-
-- Email/iCal export when a slot is confirmed
-- Read-only "results" page after the meeting
-- Webhook when availability changes (for bots / transcription clients)
-- Optional HTTP basic auth or shared edit PIN per meeting
-- ICS import to overlay busy times
-- Time-zone label per attendee for distributed teams
-- Audit log append-only section in the `.meet` file
-
-## Questions for you
-
-See the PR description / project discussion for open design questions (auth, retention, notifications).
