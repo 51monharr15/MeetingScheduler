@@ -688,9 +688,20 @@
     return `${base}?=${encodeURIComponent(slug)}${v}`;
   }
 
+  function paintNavActive(root, state) {
+    root.querySelectorAll('.dash-btn[data-tab]').forEach((btn) => {
+      btn.classList.toggle('active', btn.dataset.tab === state.activeTab);
+    });
+  }
+
   function gotoTab(root, state, tab) {
     setTab(state, tab);
-    render(root, state);
+    paintNavActive(root, state);
+    const body = root.querySelector('.meet-body-scroll');
+    if (body) body.scrollTop = 0;
+    const content = root.querySelector('.meet-content');
+    if (content) content.innerHTML = '<p class="meta pane-lead">Loading…</p>';
+    requestAnimationFrame(() => render(root, state));
   }
 
   function attendeeKey(slug) { return `meet_attendee_${slug}`; }
@@ -841,7 +852,8 @@
   function render(root, state) {
     const m = state.meet;
     const attendee = m.attendees.find((a) => a.id === state.attendeeId);
-    const scrollY = window.scrollY;
+    const scroller = root.querySelector('.meet-body-scroll');
+    const scrollY = scroller ? scroller.scrollTop : 0;
     const scrollTarget = state.scrollAfterRender || null;
     state.scrollAfterRender = null;
     root.innerHTML = `
@@ -861,27 +873,30 @@
             </nav>
           </div>
         </div>
-        ${state.helpOpen ? `<div class="help-panel-outer">${renderHelpPanel(m, attendee)}</div>` : ''}
-        <div class="meet-content">
-          ${state.activeTab === 'getting-started' ? renderGettingStartedTab(m, state, attendee) : ''}
-          ${state.activeTab === 'overview'  ? renderOverviewTab(m, state, attendee) : ''}
-          ${state.activeTab === 'attendees' ? renderAttendeesTab(m, state, attendee) : ''}
-          ${state.activeTab === 'calendar'  ? renderCalendarTab(m, state, attendee) : ''}
-          ${state.activeTab === 'group'     ? renderGroupAvailabilityTab(m, state, attendee) : ''}
-          ${state.activeTab === 'locations' ? renderLocationsTab(m, state, attendee) : ''}
-          ${state.activeTab === 'agenda'    ? renderAgendaTab(m, state, attendee) : ''}
-          ${state.activeTab === 'options'   ? renderOptionsTab(m, state, attendee) : ''}
+        <div class="meet-body-scroll">
+          ${state.helpOpen ? `<div class="help-panel-outer">${renderHelpPanel(m, attendee)}</div>` : ''}
+          <div class="meet-content">
+            ${state.activeTab === 'getting-started' ? renderGettingStartedTab(m, state, attendee) : ''}
+            ${state.activeTab === 'overview'  ? renderOverviewTab(m, state, attendee) : ''}
+            ${state.activeTab === 'attendees' ? renderAttendeesTab(m, state, attendee) : ''}
+            ${state.activeTab === 'calendar'  ? renderCalendarTab(m, state, attendee) : ''}
+            ${state.activeTab === 'group'     ? renderGroupAvailabilityTab(m, state, attendee) : ''}
+            ${state.activeTab === 'locations' ? renderLocationsTab(m, state, attendee) : ''}
+            ${state.activeTab === 'agenda'    ? renderAgendaTab(m, state, attendee) : ''}
+            ${state.activeTab === 'options'   ? renderOptionsTab(m, state, attendee) : ''}
+          </div>
         </div>
       </div>
       <div class="toast" id="toast"></div>
     `;
 
+    const nextScroller = root.querySelector('.meet-body-scroll');
     if (scrollTarget) {
       requestAnimationFrame(() => {
         root.querySelector(`.${scrollTarget}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
       });
-    } else {
-      window.scrollTo(0, scrollY);
+    } else if (nextScroller) {
+      nextScroller.scrollTop = scrollY;
     }
     afterRenderScroll(root, state);
     syncClearPinFields(root.querySelector('.edit-attendee-form'));
@@ -2069,9 +2084,6 @@
     const addCell = canEdit && !loc
       ? `<button type="button" class="compact-btn" data-action="save-location-row" title="Add this location (or tap outside the fields)">Add</button>`
       : '';
-    const saveExisting = canEdit && loc
-      ? `<button type="button" class="compact-btn loc-row-save" data-action="save-location-row" title="Save this location (or tap outside the fields)">Save</button>`
-      : '';
 
     const worksCell = !loc
       ? (addCell || '—')
@@ -2089,7 +2101,7 @@
 
     return `
       <td class="loc-cell-notes">${notesCell}</td>
-      <td class="loc-cell-location">${locationCell}${saveExisting ? `<div class="loc-row-save-wrap">${saveExisting}</div>` : ''}</td>
+      <td class="loc-cell-location">${locationCell}</td>
       <td class="loc-ok-with">${initials ? escapeHtml(initials) : '—'}</td>
       ${hideOkWithMe ? '' : `<td class="loc-ok-me">${worksCell}</td>`}
       ${showConfirm ? `<td class="loc-confirm-col">${confirmCell}</td>` : ''}`;
@@ -3528,7 +3540,7 @@
 
     const action = btn.dataset.action;
 
-    if (action === 'tab') { setTab(state, btn.dataset.tab); render(root, state); window.scrollTo(0, 0); return; }
+    if (action === 'tab') { gotoTab(root, state, btn.dataset.tab); return; }
 
     if (action === 'copy-link') {
       const input = document.getElementById('share-url-input');
