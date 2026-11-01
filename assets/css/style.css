@@ -713,6 +713,11 @@ button.linkish {
   font-size: 0.85rem;
 }
 
+.signed-in-line-warn {
+  color: #b91c1c;
+  font-weight: 600;
+}
+
 .checkbox-label {
   display: flex !important;
   align-items: center;

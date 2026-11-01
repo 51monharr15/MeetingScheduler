@@ -939,7 +939,7 @@
       return `<span class="signed-in-line" title="Manage attendee identities on the Attendees tab">No attendees yet</span>`;
     }
     if (!attendee) {
-      return `<span class="signed-in-line" title="Manage attendee identities on the Attendees tab">No signed-in attendee</span>`;
+      return `<span class="signed-in-line signed-in-line-warn" title="Manage attendee identities on the Attendees tab">No signed-in attendee</span>`;
     }
     const role = attendee.is_organizer ? 'Organiser' : 'Attendee';
     return `<span class="signed-in-line" title="Manage attendee identities on the Attendees tab">Signed in <strong>${escapeHtml(attendeeLabel(attendee))}</strong> (${role})</span>`;
