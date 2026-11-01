@@ -2,8 +2,19 @@
 
 ## FTP upload
 
+**Preferred (this PC):** from `D:\dev\MeetingScheduler`:
+
+```bat
+git pull
+git ftp push
+```
+
+git-ftp is configured for the live `/meet/` tree. `.git-ftp-ignore` keeps local `data/meets` and `data/aliases` off the server.
+
+**Or FileZilla:**
+
 1. `git pull` in your local MeetingScheduler clone (see [GIT.md](GIT.md)).
-2. Upload the app files to your server’s Meet folder (often named `meet/`) — including **new files** at the app root (see below).
+2. Upload the app files to your server’s Meet folder — including **new files** at the app root (see below).
 3. Hard-refresh the browser (Ctrl+F5).
 
 **Do not overwrite** `data/` on your server (your live meetings live there).
