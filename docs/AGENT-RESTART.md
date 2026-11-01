@@ -16,7 +16,7 @@ Discuss each fix with Simon until you agree. Simon must say to **authorise codin
 
 **No coding while ambiguous.** Do not change code (or invent a design) when the requirement is unclear. Do not offer multiple-choice design menus (A / B / C): those are the agent’s guesses about what matters. Prefer what is already agreed in `docs/UI-STYLE-GUIDE.md` and `docs/UI-HIERARCHY.md`, and ask Simon only what you still cannot know.
 
-**Principles are binding.** `docs/UI-STYLE-GUIDE.md` principles (especially compact UI / precious screen space) are not optional. Do not invent production banners, debug chrome, or layout redesigns to work around diagnosis — say the diagnosis in chat and wait for agreement.
+**Principles are important.** Follow `docs/UI-STYLE-GUIDE.md`. Principles can conflict; if you would bend or compromise one, **discuss it with Simon first** — do not decide alone. Do not invent production banners, debug chrome, or layout redesigns to work around diagnosis — say the diagnosis in chat and wait for agreement.
 
 **Deploy path:** Prefer putting authorised work on `main` so `git pull` works on Simon’s PC. Do not invent version numbers — ask.
 
