@@ -3069,7 +3069,7 @@
 
   function handlePanelSwipeStart(e, state) {
     if (!e.touches || e.touches.length !== 1) return;
-    if (e.target.closest('.calendar, .cal-body, .calendar-scroll, .locations-table-scroll, .attendee-table-wrap, input, textarea, select, button, a')) return;
+    if (e.target.closest('.calendar, .cal-body, .calendar-scroll, .locations-table-scroll, .attachments-table-scroll, .pane-region-scroll, .attendee-table-wrap, input, textarea, select, button, a')) return;
     state.swipeStartX = e.touches[0].clientX;
     state.swipeStartY = e.touches[0].clientY;
   }

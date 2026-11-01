@@ -1294,13 +1294,6 @@ button.linkish {
   margin: 0 0 0.45rem;
 }
 
-.suggestions-scroll {
-  max-height: 360px;
-  overflow-y: auto;
-  display: grid;
-  gap: 0.5rem;
-}
-
 .suggestion {
   border: 1px solid var(--line);
   border-radius: 8px;
@@ -1483,7 +1476,8 @@ button.linkish {
 }
 
 .pane-region-scroll,
-.locations-table-scroll {
+.locations-table-scroll,
+.attachments-table-scroll {
   overflow: auto;
   max-width: 100%;
   -webkit-overflow-scrolling: touch;
@@ -1768,6 +1762,10 @@ details summary { cursor: pointer; }
 }
 
 .locations-table-scroll {
+  max-height: min(420px, 60vh);
+}
+
+.attachments-table-scroll {
   max-height: min(420px, 60vh);
 }
 
