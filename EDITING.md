@@ -33,7 +33,7 @@ ls index.php operations.php favicon.svg docs/OPERATIONS.md
 cat VERSION
 ```
 
-You should see build **1.9.5** (or newer) in `VERSION`.
+You should see build **1.9.6** (or newer) in `VERSION`.
 
 ## Edit on your PC
 
