@@ -12,7 +12,7 @@ Meet work is **not** in `51monharr15/SIG-Stakeholder-Database` or `meet/` on bra
 
 Discuss each fix with Simon until you agree. Simon must say to **authorise coding** before you change code.
 
-**Reply style:** Keep outputs as short as possible. Simon will ask if he needs clarification.
+**Reply style:** Keep outputs as short as possible. Simon will ask if he needs clarification. **One step at a time** — answer only the current topic; do not dump full lists or overload recall.
 
 **No coding while ambiguous.** Do not change code (or invent a design) when the requirement is unclear. Do not offer multiple-choice design menus (A / B / C): those are the agent’s guesses about what matters. Prefer what is already agreed in `docs/UI-STYLE-GUIDE.md` and `docs/UI-HIERARCHY.md`, and ask Simon only what you still cannot know.
 
