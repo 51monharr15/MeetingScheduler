@@ -217,7 +217,20 @@ button.btn-disabled {
 }
 
 .status-strip-primary {
-  align-items: center;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.35rem 0.5rem;
+}
+
+.status-strip-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.65rem;
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .status-pair {
@@ -226,7 +239,8 @@ button.btn-disabled {
 }
 
 .status-strip-toggle {
-  margin-left: auto;
+  flex: 0 0 auto;
+  margin-left: 0;
 }
 
 .meet-content input,
@@ -2439,15 +2453,32 @@ button.day-head-marked {
   line-height: 1.25;
 }
 
-.attach-cell-label { width: 28%; }
+.attach-cell-label { width: 26%; }
 .attach-cell-content { width: auto; }
+.attach-cell-action,
+.attach-action-head {
+  width: 4.25rem;
+  vertical-align: top;
+  text-align: right;
+  white-space: nowrap;
+}
 
-.attach-row-actions {
-  margin-top: 0.35rem;
+.attachments-table textarea.attach-cell {
+  display: block;
+  width: 100%;
+  resize: vertical;
+  min-height: 4.5em;
 }
 
 .attach-row-new td {
   background: #fafafa;
+}
+
+.pane-save-row .compact-btn,
+.pane-save-below-summary .compact-btn {
+  display: inline-block;
+  visibility: visible;
+  opacity: 1;
 }
 
 .loc-expand-btn {

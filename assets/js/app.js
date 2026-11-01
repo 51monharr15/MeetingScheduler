@@ -994,11 +994,15 @@
       ? `<span class="meta">${locLabel}: ${locIds.map((id) => locationInlineHtml(m, id)).join('; ')}</span>`
       : '<span class="meta">No locations confirmed</span>';
     const expanded = !!state.statusStripExpanded;
+    const showLocWhenCollapsed = !expanded && (scheduled || hasConfirmedLocs || !!m.confirmed_slot);
     return `<div class="status-strip${expanded ? '' : ' status-strip-collapsed'}" title="${escapeHtml(STATUS_TIP)}">
       <div class="status-strip-line status-strip-primary">
-        ${renderSignedInLine(m, attendee)}
-        <span class="status-pair"><span class="status-label">Status:</span> <span class="status-value">${escapeHtml(label)}</span></span>
-        ${timeHtml}
+        <div class="status-strip-main">
+          ${renderSignedInLine(m, attendee)}
+          <span class="status-pair"><span class="status-label">Status:</span> <span class="status-value">${escapeHtml(label)}</span></span>
+          ${timeHtml}
+          ${showLocWhenCollapsed ? locHtml : ''}
+        </div>
         <button type="button" class="compact-btn status-strip-toggle" data-action="toggle-status-strip" title="${expanded ? 'Collapse status strip' : 'Expand status strip'}">${expanded ? 'Less ▴' : 'More ▾'}</button>
       </div>
       ${expanded ? `<div class="status-strip-line">${locHtml}</div>${renderStatusExpanders(m)}` : ''}
@@ -1549,12 +1553,12 @@
     const min = calendarMinStart(m);
     const end = bookableEndDate(m);
     const canGoBack = view > min;
-    const fullMap = new Map((m.suggestions?.slots || []).map((s) => [s.slot, s]));
-    const partialMap = new Map((m.suggestions?.partial_slots || []).map((s) => [s.slot, s]));
-    const days = getConfirmDays(state, m, dayCount, allHours, mtz, selected, fullMap, partialMap);
+    const { fullByTs, partialByTs } = suggestionMapsByTime(m);
+    const activeIds = activeAttendeeIds(m);
+    const days = getConfirmDays(state, m, dayCount, allHours, mtz, selected, fullByTs, partialByTs, activeIds);
     const hours = state.showAllGroupHours
       ? allHours
-      : allHours.filter((hm) => groupHourHasSignal(m, days, hm, mtz, selected, fullMap, partialMap));
+      : allHours.filter((hm) => groupHourHasSignal(m, days, hm, mtz, selected, fullByTs, partialByTs, activeIds));
     const canGoForward = state.showAllGroupDays
       ? (end ? (!days.length || startOfDay(days[days.length - 1]) < end) : true)
       : confirmHasSignalAfter(
@@ -1563,8 +1567,9 @@
           allHours,
           mtz,
           selected,
-          fullMap,
-          partialMap
+          fullByTs,
+          partialByTs,
+          activeIds
         );
     const hideNotes = [];
     if (!state.showAllGroupHours) hideNotes.push('empty hours are hidden (thicker line = omitted hours)');
@@ -1589,7 +1594,7 @@
               <div class="cal-body">
                 ${hours.map((hm, hi) => `
                   <div class="time-label${hourHasGapBefore(hours, hi, m.slot_granularity_minutes) ? ' hour-gap-before' : ''}" title="Local time${currentAltTimezone(state, m) ? ' · tap second time to cycle recorded timezones (including yours)' : ''}">${formatWallHourDisplay(hm, m, days[0] ? toDateIso(days[0]) : todayStr, state)}</div>
-                  ${days.map((day, i) => renderGroupSlotCell(m, toDateIso(day), hm, mtz, selected, fullMap, partialMap, dayHasGapBefore(days, i), hourHasGapBefore(hours, hi, m.slot_granularity_minutes))).join('')}
+                  ${days.map((day, i) => renderGroupSlotCell(m, toDateIso(day), hm, mtz, selected, fullByTs, partialByTs, activeIds, dayHasGapBefore(days, i), hourHasGapBefore(hours, hi, m.slot_granularity_minutes))).join('')}
                 `).join('')}
               </div>
             </div>
@@ -1716,50 +1721,62 @@
     return !!m.confirmed_slot && slotsEqual(m.confirmed_slot, slot);
   }
 
-  function suggestionAtSlot(m, slotIso, fullMap, partialMap) {
+  function suggestionMapsByTime(m) {
+    const fullByTs = new Map();
+    const partialByTs = new Map();
+    for (const s of m.suggestions?.slots || []) {
+      const t = slotTimeMs(s.slot);
+      if (t !== null) fullByTs.set(t, s);
+    }
+    for (const s of m.suggestions?.partial_slots || []) {
+      const t = slotTimeMs(s.slot);
+      if (t !== null) partialByTs.set(t, s);
+    }
+    return { fullByTs, partialByTs };
+  }
+
+  function suggestionAtSlot(m, slotIso, fullByTs, partialByTs, activeIds) {
     const ts = slotTimeMs(slotIso);
     if (ts === null) return { full: null, partial: null };
-    const active = activeAttendeeIds(m);
-    for (const [key, val] of fullMap) {
-      if (slotTimeMs(key) === ts) {
-        const attendees = (val.attendees || []).filter((id) => active.has(id));
-        return { full: { ...val, attendees, count: attendees.length }, partial: null };
-      }
+    const active = activeIds || activeAttendeeIds(m);
+    const fullVal = fullByTs.get(ts);
+    if (fullVal) {
+      const attendees = (fullVal.attendees || []).filter((id) => active.has(id));
+      return { full: { ...fullVal, attendees, count: attendees.length }, partial: null };
     }
-    for (const [key, val] of partialMap) {
-      if (slotTimeMs(key) === ts) {
-        const attendees_full = (val.attendees_full || []).filter((id) => active.has(id));
-        const attendees_partial = (val.attendees_partial || []).filter((p) => active.has(p.id));
-        const attendees_absent = (val.attendees_absent || []).filter((id) => active.has(id));
-        return {
-          full: null,
-          partial: { ...val, attendees_full, attendees_partial, attendees_absent },
-        };
-      }
+    const partialVal = partialByTs.get(ts);
+    if (partialVal) {
+      const attendees_full = (partialVal.attendees_full || []).filter((id) => active.has(id));
+      const attendees_partial = (partialVal.attendees_partial || []).filter((p) => active.has(p.id));
+      const attendees_absent = (partialVal.attendees_absent || []).filter((id) => active.has(id));
+      return {
+        full: null,
+        partial: { ...partialVal, attendees_full, attendees_partial, attendees_absent },
+      };
     }
     return { full: null, partial: null };
   }
 
-  function slotHasSuggestionOrAvailability(m, slotIso, fullMap, partialMap) {
-    const { full, partial } = suggestionAtSlot(m, slotIso, fullMap, partialMap);
+  function slotHasSuggestionOrAvailability(m, slotIso, fullByTs, partialByTs, activeIds) {
+    const { full, partial } = suggestionAtSlot(m, slotIso, fullByTs, partialByTs, activeIds);
     if (full || partial) return true;
     return availabilityIdsAt(m, slotIso).length > 0;
   }
 
-  function groupHourHasSignal(m, days, hm, mtz, selected, fullMap, partialMap) {
+  function groupHourHasSignal(m, days, hm, mtz, selected, fullByTs, partialByTs, activeIds) {
     return days.some((day) => {
       const slotIso = slotIsoFromMeetingDate(toDateIso(day), hm, mtz);
       if (slotIso === selected) return true;
-      return slotHasSuggestionOrAvailability(m, slotIso, fullMap, partialMap);
+      return slotHasSuggestionOrAvailability(m, slotIso, fullByTs, partialByTs, activeIds);
     });
   }
 
-  function groupDayHasSignal(m, day, hours, mtz, selected, fullMap, partialMap) {
+  function groupDayHasSignal(m, day, hours, mtz, selected, fullByTs, partialByTs, activeIds) {
     const dateStr = toDateIso(day);
     return hours.some((hm) => {
       const slotIso = slotIsoFromMeetingDate(dateStr, hm, mtz);
       if (selected && slotsEqual(selected, slotIso)) return true;
-      return slotHasSuggestionOrAvailability(m, slotIso, fullMap, partialMap);
+      return slotHasSuggestionOrAvailability(m, slotIso, fullByTs, partialByTs, activeIds);
     });
   }
 
@@ -1769,7 +1786,7 @@
    * until N days with marks (or the scheduled start) are found — do not shrink
    * the column count just because empties were stripped from a short window.
    */
-  function getConfirmDays(state, m, dayCount, allHours, mtz, selected, fullMap, partialMap) {
+  function getConfirmDays(state, m, dayCount, allHours, mtz, selected, fullByTs, partialByTs, activeIds) {
     const view = calendarViewStart(state, m);
     if (state.showAllGroupDays) {
       return getVisibleDays(view, dayCount, m.show_weekends, m);
@@ -1784,7 +1801,7 @@
       if (maxEnd && cursor > maxEnd) break;
       const dow = cursor.getDay();
       if (m.show_weekends || (dow !== 0 && dow !== 6)) {
-        if (groupDayHasSignal(m, cursor, allHours, mtz, selected, fullMap, partialMap)) {
+        if (groupDayHasSignal(m, cursor, allHours, mtz, selected, fullByTs, partialByTs, activeIds)) {
           days.push(new Date(cursor));
         }
       }
@@ -1795,7 +1812,7 @@
   }
 
   /** True if any weekday (per weekends setting) after afterDay still has Confirm signal. */
-  function confirmHasSignalAfter(m, afterDay, allHours, mtz, selected, fullMap, partialMap) {
+  function confirmHasSignalAfter(m, afterDay, allHours, mtz, selected, fullByTs, partialByTs, activeIds) {
     let cursor = addDays(startOfDay(afterDay), 1);
     const maxEnd = bookableEndDate(m);
     let guard = 0;
@@ -1803,7 +1820,7 @@
       if (maxEnd && cursor > maxEnd) return false;
       const dow = cursor.getDay();
       if (m.show_weekends || (dow !== 0 && dow !== 6)) {
-        if (groupDayHasSignal(m, cursor, allHours, mtz, selected, fullMap, partialMap)) return true;
+        if (groupDayHasSignal(m, cursor, allHours, mtz, selected, fullByTs, partialByTs, activeIds)) return true;
       }
       cursor = addDays(cursor, 1);
       guard++;
@@ -1844,14 +1861,14 @@
     return (ids || []).map((id) => attendeeInitials(m, id)).filter(Boolean).join(' ');
   }
 
-  function renderGroupSlotCell(m, dateStr, hm, mtz, selected, fullMap, partialMap, gapBefore = false, hourGapBefore = false) {
+  function renderGroupSlotCell(m, dateStr, hm, mtz, selected, fullByTs, partialByTs, activeIds, gapBefore = false, hourGapBefore = false) {
     const slotIso = slotIsoFromMeetingDate(dateStr, hm, mtz);
     let cls = 'empty';
     let tip = `${formatSlotLocal(slotIso)} · ${formatSlotUtc(slotIso)}`;
     let initials = '';
     const atSlotIds = availabilityIdsAt(m, slotIso);
     const allAtSlot = m.attendees.length > 0 && atSlotIds.length === m.attendees.length;
-    const { full: fullEntry, partial: partialEntry } = suggestionAtSlot(m, slotIso, fullMap, partialMap);
+    const { full: fullEntry, partial: partialEntry } = suggestionAtSlot(m, slotIso, fullByTs, partialByTs, activeIds);
     if (fullEntry) {
       const s = fullEntry;
       cls = 'full';
@@ -2316,18 +2333,18 @@
           ? `<input type="text" class="attach-cell" data-attach-field="label" value="${escapeHtml(att.label)}" placeholder="Label">`
           : escapeHtml(att.label)}</td>
         <td class="attach-cell-content">${canEdit
-          ? `<textarea class="attach-cell" data-attach-field="content" rows="3" placeholder="URL or text (simple HTML)">${escapeHtml(content)}</textarea>
-             <div class="attach-row-actions"><button type="button" class="compact-btn" data-action="save-attachment-row" title="Save this attachment (or tap outside the fields)">Save</button></div>`
+          ? `<textarea class="attach-cell" data-attach-field="content" rows="4" placeholder="URL or text (simple HTML)">${escapeHtml(content)}</textarea>`
           : renderAttachFieldDisplay(state, att.id, content, { readOnly: true })}</td>
+        ${canEdit ? `<td class="attach-cell-action"><button type="button" class="compact-btn" data-action="save-attachment-row" title="Save this attachment (or tap outside the fields)">Save</button></td>` : ''}
       </tr>`;
     }).join('');
     const newRow = canEdit ? `<tr class="attach-row attach-row-new" data-attachment-row data-attachment-id="">
       <td class="attach-cell-label"><input type="text" class="attach-cell" data-attach-field="label" placeholder="Add new…"></td>
-      <td class="attach-cell-content"><textarea class="attach-cell" data-attach-field="content" rows="3" placeholder="URL or text (simple HTML)"></textarea>
-        <div class="attach-row-actions"><button type="button" class="compact-btn" data-action="save-attachment-row" title="Add this attachment (or tap outside the fields)">Add</button></div></td>
+      <td class="attach-cell-content"><textarea class="attach-cell" data-attach-field="content" rows="4" placeholder="URL or text (simple HTML)"></textarea></td>
+      <td class="attach-cell-action"><button type="button" class="compact-btn" data-action="save-attachment-row" title="Add this attachment (or tap outside the fields)">Add</button></td>
     </tr>` : '';
-    return `<div class="pane-region-scroll attachments-table-scroll"><table class="data-table attachments-table">
-      <thead><tr><th>Label</th><th>Content</th></tr></thead>
+    return `<div class="attachments-table-scroll"><table class="data-table attachments-table">
+      <thead><tr><th>Label</th><th>Content</th>${canEdit ? '<th class="attach-action-head"></th>' : ''}</tr></thead>
       <tbody>${newRow}${rows}</tbody>
     </table></div>`;
   }
@@ -2398,8 +2415,7 @@
     const agendaVal = drafts.agenda != null ? drafts.agenda : (m.agenda || []).join('\n');
     const decisionsVal = drafts.decisions != null ? drafts.decisions : (m.decisions || []).join('\n');
     const notesVal = drafts.notes != null ? drafts.notes : (m.notes || '');
-    const saveBtn = (formId) => `<button type="submit" form="${formId}" class="compact-btn">Save</button>`;
-    const saveRow = (formId) => (canEditDesc ? `<div class="pane-save-row pane-save-below-summary">${saveBtn(formId)}</div>` : '');
+    const saveBtn = () => `<button type="submit" class="compact-btn">Save</button>`;
     const attachCount = (m.attachments || []).length;
 
     return `
@@ -2407,37 +2423,37 @@
         <p class="meta pane-lead">Description, agenda, decisions, notes, and attachments — pre- and post-meeting assets in one place.</p>
         <details ${paneDetailsAttrs(state, 'mr-description', { extraClass: 'tint-text' })}>
           <summary>Description for attendees <span class="label-hint">(simple HTML — status bar &amp; Overview)</span></summary>
-          ${saveRow('form-update-description')}
           <div class="pane-details-body">
           <form class="inline-form" data-form="update-description" id="form-update-description">
+            ${canEditDesc ? `<div class="pane-save-row pane-save-below-summary">${saveBtn()}</div>` : ''}
             ${canEditDesc ? formatToolbar('organizer_intro', { withHelp: true, helpTopic: 'meeting description' }) : ''}
             <textarea name="organizer_intro" rows="4" placeholder="${escapeHtml(INTRO_PLACEHOLDER)}"${canEditDesc ? '' : ' readonly'}>${escapeHtml(introVal)}</textarea>
-            ${canEditDesc ? `<div class="pane-save-row">${saveBtn('form-update-description')}</div>` : '<p class="meta">Sign in on Attendees to edit.</p>'}
+            ${canEditDesc ? `<div class="pane-save-row">${saveBtn()}</div>` : '<p class="meta">Sign in on Attendees to edit.</p>'}
           </form>
           </div>
         </details>
         <details ${paneDetailsAttrs(state, 'mr-agenda', { secondary: true, extraClass: 'tint-text' })}>
           <summary>Agenda &amp; decisions <span class="label-hint">(each line is a bullet on Overview and status strip)</span></summary>
-          ${saveRow('form-update-agenda')}
           <div class="pane-details-body">
           <form class="inline-form" data-form="update-agenda" id="form-update-agenda">
+            ${canEditDesc ? `<div class="pane-save-row pane-save-below-summary">${saveBtn()}</div>` : ''}
             <label>Agenda<textarea name="agenda" rows="4">${escapeHtml(agendaVal)}</textarea></label>
             <label>Decisions required<textarea name="decisions" rows="3">${escapeHtml(decisionsVal)}</textarea></label>
-            ${canEditDesc ? `<div class="pane-save-row">${saveBtn('form-update-agenda')}</div>` : ''}
+            ${canEditDesc ? `<div class="pane-save-row">${saveBtn()}</div>` : ''}
           </form>
           </div>
         </details>
         <details ${paneDetailsAttrs(state, 'mr-notes', { secondary: true, extraClass: 'tint-text' })}>
           <summary>Notes <span class="label-hint">(shown on Overview under Agenda and decisions)</span></summary>
-          ${saveRow('form-update-notes')}
           <div class="pane-details-body">
           <form class="inline-form" data-form="update-notes" id="form-update-notes">
+            ${canEditDesc ? `<div class="pane-save-row pane-save-below-summary">${saveBtn()}</div>` : ''}
             <label>Notes
               ${canEditDesc ? formatToolbar('notes', { withHelp: false }) : ''}
               <textarea name="notes" rows="5">${escapeHtml(notesVal)}</textarea>
             </label>
             <p class="meta">Press Enter for a new line — line breaks are shown automatically. Do not also insert <code>&lt;br&gt;</code> tags unless you want an extra blank line.</p>
-            ${canEditDesc ? `<div class="pane-save-row">${saveBtn('form-update-notes')}</div>` : ''}
+            ${canEditDesc ? `<div class="pane-save-row">${saveBtn()}</div>` : ''}
           </form>
           </div>
         </details>
