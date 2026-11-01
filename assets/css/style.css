@@ -749,7 +749,7 @@ button.linkish {
 
 .calendar-toolbar-sticky {
   position: sticky;
-  top: var(--sticky-h, 0px);
+  top: 0;
   z-index: 5;
   background: var(--panel, #fff);
   padding: 0.35rem 0;
@@ -2465,9 +2465,6 @@ button.day-head-marked {
   touch-action: manipulation;
 }
 
-.loc-row-save-wrap {
-  margin-top: 0.25rem;
-}
 
 @media (max-width: 600px) {
   .find-meetings-fields { grid-template-columns: 1fr; }
