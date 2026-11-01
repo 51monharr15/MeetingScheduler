@@ -1,6 +1,6 @@
 # Meet Scheduler — UI hierarchy and text constants
 
-**Build:** 1.8.53  
+**Build:** 1.8.54  
 **Purpose:** Map pages → panels → panes, with **exact on-screen text** under each pane so amendments can be referenced by location and wording.
 
 **Sources (on-screen pane/panel copy):** `meet/index.php`, `meet/assets/js/app.js`  
@@ -88,23 +88,20 @@ This is the persistent bar at the top of a meeting (title, actions, status, gree
 
 ### Sticky header actions
 
-Header action buttons are fully clickable (`pointer-events: auto`, elevated z-index). On narrow screens (max-width 700px) the action row stacks under the meeting title (single-column grid).
+Title on its own row. Below: status block (left, most of the width) and actions stacked on the right (**How to use this**, **Copy meeting link**) — always visible. No **More ▾**.
 
 | Text | Notes |
 |------|-------|
-| More ▾ / Less ▴ | Narrow screens only. Title: Collapse/Expand for narrow screens |
 | How to use this | Title: How to use this meeting scheduler |
 | Copy meeting link | Title: Copy meeting link |
 
-### Signed-in banner
-- Currently signed in as **{name}** (Organiser \| Attendee)
-- **No attendees yet** (when the meeting has no attendee rows)
-- **No signed-in attendee** (when attendees exist but this browser is not signed in)
-- Title: Manage attendee identities on the Attendees tab
+### Status strip (includes signed-in)
 
-### Status strip
+No separate block heading. First line: **Signed in {name} ({role})** · **Status:** … · date/time or none. Next: location or none. Then expandable **Description** and combined **Agenda · Decisions · Attachments · Notes** (Notes named in the summary only when notes exist).
 
-**Description** stays its own expandable line. **Agenda items, Decisions, and Attachments** share **one** expandable heading with counts; expand to see all three sections.
+Signed-in variants: **No attendees yet** / **No signed-in attendee** / **Signed in {name} ({role})**. Title: Manage attendee identities on the Attendees tab.
+
+**Description** stays its own expandable line. **Agenda, Decisions, Attachments, and Notes** share **one** expandable heading; expand to see what exists.
 
 Scheduled times always show **start and end** (end = start + meeting length) in the viewer’s timezone, plus UTC.
 
@@ -128,9 +125,6 @@ Scheduled times always show **start and end** (end = start + meeting length) in 
 | Combined body — Attachments empty | **Attachments** — none yet. Go to **Meeting Resources** to add them. **TODO** check behaviour |
 
 **Past** and **Summarised** are status labels (after the scheduled start; Summarised when attachments exist). There is **no** Past dashboard tab.
-
-### Compact status (narrow + collapsed header)
-- Status: {label} only (same STATUS tip).
 
 ### Dashboard nav (green buttons)
 
@@ -424,7 +418,7 @@ Table sits in a horizontally scrollable wrapper (`.locations-table-scroll`). Wel
 | slotHint (multi) | Select {N} consecutive {gran} slot(s) to cover the full {dur} meeting. |
 | slotHint (single) | Each slot is {gran} — one slot covers the full meeting. |
 | Slot colours | Solid blue tint = your selection (already saved, or matching what is saved). **Orange dashed** = new pick not saved yet. **Grey dashed** = you turned off a saved slot — still in the meeting until you Save again. Light green = others are available (their initials). A **+** means more initials than fit in the cell (tooltips show the full list). |
-| Copy hint | **Copy / paste** replicates a series of days’ availability (e.g. set a week’s pattern, Copy, Paste onto a new week, then hand-tune). Mark days by selecting column headers. Empty marked days stay in the sequence so gaps are preserved. **Copy days** (reports every marked day) → mark the **first** destination day → **Paste**. Example: Copy Mon, Tue, Wed then paste from Thursday → Thu, Fri, Mon when weekends are excluded, or Thu, Fri, Sat when weekends are allowed. |
+| Copy hint | **Copying availability:** tap/click day headings to select → **Copy days** → first destination day → **Paste**. Empty marked days stay in the sequence. Weekends off: Fri→Mon = 2 days; otherwise 4. |
 | Invert / clear | **Invert days** toggles blank ↔ not-yet-saved selection (orange dashed) on marked days; solid saved picks stay. Adjust, then Save. **Clear selection** restores last saved slots. Touch: swipe the grid left/right to move dates (a stronger swipe continues further). |
 | Nav hint | Use the date navigation (left of the grid) to move by day, screen, or jump to first/last bookable dates. |
 | Hours | Meeting hours {start}–{end} (meeting base). Times at left show **your** local timezone ({tz}){; tap the second time to cycle recorded timezones (including yours)}. |
@@ -459,7 +453,8 @@ Shown when signed in. **Left-aligned** action band **above and below** the grid 
 - **Copy days** (title: Copy marked days as a sequence (as shown left→right). Empty days stay in the sequence. Uses your current selection on each day.)
 - **Paste** (title: Paste the sequence from the leftmost marked day onward (next displayed days). Adds to selection only. Clipboard kept for another Paste.)
 - **Invert days** (title: On marked days: flip blank ↔ orange dashed. Solid saved selections are left unchanged.)
-- Toolbar explain (right of Show days): **Save** keeps new picks and removes slots you turned off. Mark date headings → **Copy days** → mark first destination → **Paste**. **Invert days** toggles blank ↔ not-yet-saved. With weekends off, Fri→Mon counts as two steps.
+- Toolbar explain (right of Show days): **Save** records new picks and removes slots you turned off. Copy: tap/click day headings → **Copy days** → first destination day → **Paste**. Weekends off: Fri→Mon = 2 days; otherwise 4.
+- Invert control label: **Invert selection**
 - Meta: Clipboard: {N} day(s) in sequence ({day numbers}) — mark the first destination day, then Paste. Paste again from another start if you like. *(when clipboard set)*
 - Meta: {N} slot(s) selected · {optional unsaved pick / to remove on Save / day marked notes} · drag or tap slots to select a range *(or “tap slots to select” on touch)* · {optional slotHint from meeting length / granularity}
 
@@ -474,7 +469,7 @@ Shown when signed in. **Left-aligned** action band **above and below** the grid 
 ### Pane: Lead
 - Description, agenda, decisions, notes, and attachments — preparation and follow-up assets in one place.
 
-Collapsible panes. Where edit is allowed, **Save** sits on the pane **summary** (title left, Save top-right via `pane-summary-with-save`) and again at the bottom of the pane body (**dual Save**). Attachments use **tab-out save only** (no Save on the summary).
+Collapsible panes. Where edit is allowed, **Save** sits on the pane **summary** (title left, Save top-right via `pane-summary-with-save`) and again at the bottom of the pane body (**dual Save**). Attachments use per-row **Add** / **Save** (blur-save kept as fallback; no Save on the pane summary).
 
 ### Pane: Description `mr-description` *tint-text* (clearer blue `#e0f2fe`)
 - Summary: **Description for attendees** *(simple HTML — status bar & Overview)* · **Save** *(when signed in)*
@@ -499,8 +494,8 @@ Help body: Enter plain text or simple HTML. Tags not in the allowed list are str
 
 ### Pane: Attachments `mr-attachments` *tint-assets*
 - Summary: **Attachments ({N})** *(no Save on summary)*
-- Lead: Preparation or follow-up links/text. Edit a cell and tab out to save. Leading spaces on URLs are stripped.
-- Columns: Label · Content
+- Lead: Preparation or follow-up links/text. On a phone, tap **Add** or **Save** (or tap outside the field). Leading spaces on URLs are stripped.
+- Columns: Label · Content · (Add/Save action)
 - Placeholders: New row first field (Label): **Add new…** · Content: URL or text (simple HTML)
 - Empty (unsigned-in, none): No attachments yet.
 

@@ -1,7 +1,7 @@
 # Agent restart note
 
 **Repo:** https://github.com/51monharr15/MeetingScheduler (`main`)  
-**Build:** see `VERSION` (1.8.53 when this note was added)  
+**Build:** see `VERSION`  
 **UI truth:** `docs/UI-HIERARCHY.md`, `docs/UI-STYLE-GUIDE.md`
 
 ## Wrong place (do not use)
@@ -10,21 +10,23 @@ Meet work is **not** in `51monharr15/SIG-Stakeholder-Database` or `meet/` on bra
 
 ## Process
 
-Discuss each fix with Simon until you agree. Simon must say to **authorise coding** before you change code. Keep replies short when he is on mobile.
+Discuss each fix with Simon until you agree. Simon must say to **authorise coding** before you change code.
 
-## Faults Simon reported (2026-11-01) — not yet fixed
+**Reply style:** Keep outputs as short as possible. Simon will ask if he needs clarification. **One step at a time** — answer only the current topic; do not dump full lists or overload recall.
 
-1. **Meeting Resources → Attachments (amber/yellow table):** Rows save when focus leaves the field (desktop **Tab**). There is **no Save button**. On mobile there is **no Tab**, so he often **cannot save or add** rows.
+**No coding while ambiguous.** Do not change code (or invent a design) when the requirement is unclear. Do not offer multiple-choice design menus (A / B / C): those are the agent’s guesses about what matters. Prefer what is already agreed in `docs/UI-STYLE-GUIDE.md` and `docs/UI-HIERARCHY.md`, and ask Simon only what you still cannot know.
 
-2. **Same pattern may apply** to the **Locations** table (also saves on leaving a field).
+## Faults Simon reported (2026-11-01)
 
-3. **Notes / other blocks on Meeting Resources** use a **Save** button at the bottom; on mobile that may still be hard to reach (keyboard, scrolling).
+Agreed and implemented on the UX-fixes branch (verify in review):
 
-4. **Top header:** On a narrow screen too much is hidden behind **More ▾**; the nav does not say **Notes** (only **Meeting Resources**).
-
-5. **Getting started:** He wants a clearer way back to instructions between steps (tab exists; UX TBD).
-
-6. **Mobile calendar:** Help text talks about **drag**; on phone you **tap** slots. Wording/fix TBD.
+1. **Attachments** — **Add** / **Save** on rows (blur-save kept as fallback).
+2. **Locations** — same (**Add** on new row; **Save** on existing).
+3. **Notes Saves** — closed; not a real problem (Attachments was).
+4. **Top header** — Help + Copy always visible (stacked); status block shows Signed in + Status + time, then location, then expandable description / agenda·decisions·attachments·notes; no **More ▾**.
+5. **Getting started next-step hints** — suggest Getting started or next setup step (no auto-jump).
+6. **Mobile calendar copy** — tap/click wording; toolbar Save/Copy line; **Invert selection** button rename.
+7. **Button padding** — reduced (~half vertical; slightly less than half horizontal).
 
 ## Deploy (Simon)
 

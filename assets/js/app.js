@@ -840,24 +840,20 @@
     const scrollY = window.scrollY;
     const scrollTarget = state.scrollAfterRender || null;
     state.scrollAfterRender = null;
-    const narrow = isNarrowScreen();
-    const compactHeader = narrow && !state.headerExpanded;
-
     root.innerHTML = `
       <div class="meet-shell">
-        <div class="sticky-top${compactHeader ? ' sticky-top-compact' : ''}">
+        <div class="sticky-top">
           <div class="sticky-top-inner">
-            <div class="sticky-head">
-              <h1 class="meet-title" title="${escapeHtml(m.title)}">${escapeHtml(m.title)}</h1>
-              <div class="sticky-head-actions row">
-                ${narrow ? `<button type="button" class="compact-btn header-toggle-btn" data-action="toggle-header" title="Collapse/Expand for narrow screens">${compactHeader ? 'More ▾' : 'Less ▴'}</button>` : ''}
+            <h1 class="meet-title" title="${escapeHtml(m.title)}">${escapeHtml(m.title)}</h1>
+            <div class="sticky-main-row">
+              <div class="sticky-status-col">
+                ${renderMeetingStatus(m, state, attendee)}
+              </div>
+              <div class="sticky-head-actions">
                 <button type="button" class="compact-btn header-help-btn" data-action="toggle-help" title="How to use this meeting scheduler">How to use this</button>
                 <button type="button" class="compact-btn" data-action="copy-link" title="Copy meeting link">Copy meeting link</button>
               </div>
             </div>
-            ${renderSignedInBanner(m, attendee)}
-            ${compactHeader ? renderMeetingStatusCompact(m, state) : ''}
-            ${!compactHeader ? renderMeetingStatus(m, state) : ''}
             <nav class="dashboard-nav" aria-label="Meeting sections">
               ${renderDashboardNav(m, state, attendee)}
             </nav>
@@ -910,15 +906,15 @@
 
   // ─── Dashboard nav ───────────────────────────────────────────────────────────
 
-  function renderSignedInBanner(m, attendee) {
+  function renderSignedInLine(m, attendee) {
     if (!m.attendees?.length) {
-      return `<p class="meta signed-in-banner" title="Manage attendee identities on the Attendees tab">No attendees yet</p>`;
+      return `<span class="signed-in-line" title="Manage attendee identities on the Attendees tab">No attendees yet</span>`;
     }
     if (!attendee) {
-      return `<p class="meta signed-in-banner" title="Manage attendee identities on the Attendees tab">No signed-in attendee</p>`;
+      return `<span class="signed-in-line" title="Manage attendee identities on the Attendees tab">No signed-in attendee</span>`;
     }
     const role = attendee.is_organizer ? 'Organiser' : 'Attendee';
-    return `<p class="meta signed-in-banner" title="Manage attendee identities on the Attendees tab">Currently signed in as <strong>${escapeHtml(attendeeLabel(attendee))}</strong> (${role})</p>`;
+    return `<span class="signed-in-line" title="Manage attendee identities on the Attendees tab">Signed in <strong>${escapeHtml(attendeeLabel(attendee))}</strong> (${role})</span>`;
   }
 
   function renderDashboardNav(m, state, attendee) {
@@ -956,26 +952,13 @@
     return wasRescheduled ? 'rescheduled' : 'scheduled';
   }
 
-  function renderMeetingStatusCompact(m, state) {
-    const label = STATUS_LABELS[meetingStatusKind(m, state)];
-    return `<div class="status-strip status-strip-compact" title="${escapeHtml(STATUS_TIP)}">
-      <span class="status-label">Status:</span>
-      <span class="status-value">${escapeHtml(label)}</span>
-    </div>`;
-  }
-
-  function renderMeetingStatus(m, state) {
+  function renderMeetingStatus(m, state, attendee) {
     const kind = meetingStatusKind(m, state);
     const label = STATUS_LABELS[kind];
     const scheduled = kind === 'scheduled' || kind === 'rescheduled' || kind === 'past' || kind === 'summarised';
-    const recurrenceLabel = escapeHtml(m.recurrence_label || 'One-off');
-    let timeHtml;
-    if (m.confirmed_slot) {
-      timeHtml = `<span class="meta">Time: ${formatTimePair(m.confirmed_slot, m)}</span>`;
-    } else {
-      timeHtml = '<span class="meta">No date and time selected</span>';
-    }
-    const recurrenceHtml = `<span class="meta">Recurrence: ${recurrenceLabel}</span>`;
+    const timeHtml = m.confirmed_slot
+      ? `<span class="meta">Time: ${formatTimePair(m.confirmed_slot, m)}</span>`
+      : '<span class="meta">No date and time selected</span>';
     const locIds = confirmedLocationIdsForDisplay(m, state);
     const hasConfirmedLocs = effectiveConfirmedLocationIds(state, m).length > 0;
     const locLabel = scheduled || hasConfirmedLocs ? 'Locations' : 'Locations (proposed)';
@@ -983,11 +966,13 @@
       ? `<span class="meta">${locLabel}: ${locIds.map((id) => locationInlineHtml(m, id)).join('; ')}</span>`
       : '<span class="meta">No locations confirmed</span>';
     return `<div class="status-strip" title="${escapeHtml(STATUS_TIP)}">
-      <span class="status-label">Status:</span>
-      <span class="status-value">${escapeHtml(label)}</span>
-      ${timeHtml}
-      ${recurrenceHtml}
-      ${locHtml}
+      <div class="status-strip-line">
+        ${renderSignedInLine(m, attendee)}
+        <span class="status-label">Status:</span>
+        <span class="status-value">${escapeHtml(label)}</span>
+        ${timeHtml}
+      </div>
+      <div class="status-strip-line">${locHtml}</div>
       ${renderStatusExpanders(m)}
     </div>`;
   }
@@ -1005,7 +990,10 @@
     const agenda = m.agenda || [];
     const decisions = m.decisions || [];
     const attachments = m.attachments || [];
-    const combinedSummary = `Agenda items (${agenda.length}) · Decisions (${decisions.length}) · Attachments (${attachments.length})`;
+    const notes = (m.notes || '').trim();
+    const notesPlain = notes ? notes.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim() : '';
+    const notesPart = notesPlain ? ` · Notes` : '';
+    const combinedSummary = `Agenda items (${agenda.length}) · Decisions (${decisions.length}) · Attachments (${attachments.length})${notesPart}`;
 
     const agendaBlock = agenda.length
       ? `<p class="meta"><strong>Agenda</strong></p><ul class="list-plain status-expand-list">${agenda.map((i) => `<li>${escapeHtml(i)}</li>`).join('')}</ul>`
@@ -1026,6 +1014,10 @@
       ? `<p class="meta"><strong>Attachments</strong></p><ul class="list-plain status-expand-list">${attachItems}</ul>`
       : '<p class="meta"><strong>Attachments</strong> — none yet. Go to <strong>Meeting Resources</strong> to add them.</p>';
 
+    const notesBlock = notes
+      ? `<p class="meta"><strong>Notes</strong></p><div class="meet-intro-body status-desc-body">${sanitizeHtml(notes)}</div>`
+      : '<p class="meta"><strong>Notes</strong> — none yet. Go to <strong>Meeting Resources</strong> to add them.</p>';
+
     return `
       <details class="status-desc">
         <summary class="meta status-desc-summary">${escapeHtml(descSummary)}</summary>
@@ -1037,6 +1029,7 @@
           ${agendaBlock}
           ${decisionsBlock}
           ${attachmentsBlock}
+          ${notesBlock}
         </div>
       </details>`;
   }
@@ -1381,18 +1374,18 @@
       ? `<p class="meta">Clipboard: ${state.availClipboard.patterns.length} day(s) in sequence (${escapeHtml((state.availClipboard.labels || []).join(', ') || '…')}) — mark the first destination day, then Paste. Paste again from another start if you like.</p>`
       : '';
     const hoursLine = `Meeting hours ${formatWallHour(hours[0] || { hour: 8, minute: 0 })}–${formatWallHour(hours[hours.length - 1] || { hour: 20, minute: 0 })} (meeting base). Times at left show <strong>your</strong> local timezone (${escapeHtml(tz)})${currentAltTimezone(state, m) ? '; tap the second time to cycle recorded timezones (including yours)' : ''}.`;
-    const availExplain = `<strong>Save</strong> keeps new picks and removes slots you turned off. Mark date headings → <strong>Copy days</strong> → mark first destination → <strong>Paste</strong>. <strong>Invert days</strong> toggles blank ↔ not-yet-saved. With weekends off, Fri→Mon counts as two steps.`;
+    const availExplain = `<strong>Save</strong> records new picks and removes slots you turned off. Copy: tap/click day headings → <strong>Copy days</strong> → first destination day → <strong>Paste</strong>. Weekends off: Fri→Mon = 2 days; otherwise 4.`;
 
     return `
       <section class="panel stack calendar-panel">
         <div class="availability-mark-band">
           <details class="calendar-instructions" data-pane-id="cal-instructions"${paneOpenAttr(state, 'cal-instructions', { secondary: isNarrowScreen() })}>
           <summary class="section-title" title="How to mark your availability on the calendar">Mark when you are free</summary>
-          <p class="meta">Each cell is an <strong>availability slot</strong> of ${formatDurationLabel(m.slot_granularity_minutes)}. Drag or tap to select (turns orange with a dashed border), then <strong>Save</strong> to write your selection to the meeting (turns solid blue with initials). Tap, click, or drag a selected slot again to deselect — save again after changes.</p>
+          <p class="meta">Each cell is an <strong>availability slot</strong> of ${formatDurationLabel(m.slot_granularity_minutes)}. Tap or click to select (turns orange with a dashed border), then <strong>Save</strong> to write your selection to the meeting (turns solid blue with initials). Tap or click a selected slot again to deselect — save again after changes.</p>
           <p class="meta"><strong>Meeting length</strong> is ${formatDurationLabel(m.duration_minutes)}.${slotHint} Finer slots let you show partial availability if you cannot make the whole meeting.</p>
           <p class="meta slot-legend-note"><strong>Slot colours:</strong> Solid blue tint = your selection (already saved, or matching what is saved). <strong>Orange dashed</strong> = new pick not saved yet. <strong>Grey dashed</strong> = you turned off a saved slot — still in the meeting until you Save again. Light green = others are available (their initials). A <strong>+</strong> means more initials than fit in the cell (tooltips show the full list).</p>
-          <p class="meta"><strong>Copy / paste</strong> replicates a series of days’ availability (e.g. set a week’s pattern, Copy, Paste onto a new week, then hand-tune). Mark days by selecting column headers. Empty marked days stay in the sequence so gaps are preserved. <strong>Copy days</strong> (reports every marked day) → mark the <strong>first</strong> destination day → <strong>Paste</strong>. Example: Copy Mon, Tue, Wed then paste from Thursday → Thu, Fri, Mon when weekends are excluded, or Thu, Fri, Sat when weekends are allowed.</p>
-          <p class="meta"><strong>Invert days</strong> toggles blank ↔ not-yet-saved selection (orange dashed) on marked days; solid saved picks stay. Adjust, then Save. <strong>Clear selection</strong> restores last saved slots.${isTouchUi ? ' Touch: swipe the grid left/right to move dates (a stronger swipe continues further).' : ''}</p>
+          <p class="meta"><strong>Copying availability:</strong> tap/click day headings to select → <strong>Copy days</strong> → first destination day → <strong>Paste</strong>. Empty marked days stay in the sequence. Weekends off: Fri→Mon = 2 days; otherwise 4.</p>
+          <p class="meta"><strong>Clear selection</strong> restores last saved slots.${isTouchUi ? ' Touch: swipe the grid left/right to move dates (a stronger swipe continues further).' : ''}</p>
           <p class="meta">Use the date navigation (left of the grid) to move by day, screen, or jump to first/last bookable dates.</p>
           <p class="meta">${hoursLine}</p>
         </details>
@@ -1447,7 +1440,7 @@
           const marked = availabilityCopy && state?.headerMarkedDates?.has(dateStr);
           const label = `${formatDayHeadDateStr(dateStr, mtz)}${isToday ? '<br><small>today</small>' : ''}${recur ? '<br><small>recurring</small>' : ''}`;
           if (availabilityCopy) {
-            return `<button type="button" class="day-head day-head-markable${gap ? ' day-gap-before' : ''}${recur ? ' recurring' : ''}${isToday ? ' is-today' : ''}${marked ? ' day-head-marked' : ''}" data-action="toggle-day-mark" data-date="${escapeHtml(dateStr)}" title="Mark this day for Copy days, Paste (start), or Invert days. Copy/paste follow days as shown; empty days stay in the sequence.">${label}</button>`;
+            return `<button type="button" class="day-head day-head-markable${gap ? ' day-gap-before' : ''}${recur ? ' recurring' : ''}${isToday ? ' is-today' : ''}${marked ? ' day-head-marked' : ''}" data-action="toggle-day-mark" data-date="${escapeHtml(dateStr)}" title="Mark this day for Copy days, Paste (start), or Invert selection. Copy/paste follow days as shown; empty days stay in the sequence.">${label}</button>`;
           }
           return `<div class="day-head${gap ? ' day-gap-before' : ''}${recur ? ' recurring' : ''}${isToday ? ' is-today' : ''}" title="${escapeHtml(formatDayHeadDateStr(dateStr, mtz))}${isToday ? ' — today' : ''}">${label}</div>`;
         }).join('')}
@@ -1461,7 +1454,7 @@
     const clearBtn = `<button type="button" class="btn-cancel" data-action="clear-selection" title="Discard unsaved picks and pending removals — restore your last saved availability">Clear selection</button>`;
     const copyDaysBtn = `<button type="button" class="btn-cancel" data-action="copy-avail-days" title="Copy marked days as a sequence (as shown left→right). Empty days stay in the sequence. Uses your current selection on each day.">Copy days</button>`;
     const pasteBtn = `<button type="button" class="btn-cancel" data-action="paste-avail-days" title="Paste the sequence from the leftmost marked day onward (next displayed days). Adds to selection only. Clipboard kept for another Paste.">Paste</button>`;
-    const invertBtn = `<button type="button" class="btn-cancel" data-action="invert-avail-days" title="On marked days: flip blank ↔ orange dashed. Solid saved selections are left unchanged.">Invert days</button>`;
+    const invertBtn = `<button type="button" class="btn-cancel" data-action="invert-avail-days" title="On marked days: flip blank ↔ orange dashed. Solid saved selections are left unchanged.">Invert selection</button>`;
     const buttons = `${saveBtn}${clearBtn}${copyDaysBtn}${pasteBtn}${invertBtn}`;
     const candidateCount = countCandidateSlots(state, m);
     const pendingClearCount = countPendingClearSlots(state, m);
@@ -2063,6 +2056,9 @@
     const addCell = canEdit && !loc
       ? `<button type="button" class="compact-btn" data-action="save-location-row" title="Add this location (or tap outside the fields)">Add</button>`
       : '';
+    const saveExisting = canEdit && loc
+      ? `<button type="button" class="compact-btn loc-row-save" data-action="save-location-row" title="Save this location (or tap outside the fields)">Save</button>`
+      : '';
 
     const worksCell = !loc
       ? (addCell || '—')
@@ -2080,7 +2076,7 @@
 
     return `
       <td class="loc-cell-notes">${notesCell}</td>
-      <td class="loc-cell-location">${locationCell}</td>
+      <td class="loc-cell-location">${locationCell}${saveExisting ? `<div class="loc-row-save-wrap">${saveExisting}</div>` : ''}</td>
       <td class="loc-ok-with">${initials ? escapeHtml(initials) : '—'}</td>
       ${hideOkWithMe ? '' : `<td class="loc-ok-me">${worksCell}</td>`}
       ${showConfirm ? `<td class="loc-confirm-col">${confirmCell}</td>` : ''}`;
@@ -2127,7 +2123,7 @@
 
   function renderLocationsTab(m, state, attendee) {
     const hint = attendee
-      ? `<p class="meta pane-lead">Proposed URLs or place names in the <strong>top row</strong> are added to the table. On a phone, tap <strong>Add</strong> or tap outside the field to save (there is no Tab key).</p>
+      ? `<p class="meta pane-lead">Proposed URLs or place names in the <strong>top row</strong> are added to the table. On a phone, tap <strong>Add</strong> or <strong>Save</strong> (or tap outside the field).</p>
          <p class="meta pane-lead">Toggle <strong>OK with me</strong> to record your preference. Tap/click overflow cells to expand; use <strong>Copy</strong> after expanding a link.</p>`
       : '<p class="meta pane-lead">Proposed URLs or place names in the top row are added to the table. Sign in on Attendees to propose locations and mark OK with me.</p>';
     return `
@@ -2297,14 +2293,16 @@
         <td class="attach-cell-content">${canEdit
           ? `<textarea class="attach-cell" data-attach-field="content" rows="3" placeholder="URL or text (simple HTML)">${escapeHtml(content)}</textarea>`
           : renderAttachFieldDisplay(state, att.id, content, { readOnly: true })}</td>
+        ${canEdit ? `<td class="attach-cell-action"><button type="button" class="compact-btn" data-action="save-attachment-row" title="Save this attachment (or tap outside the fields)">Save</button></td>` : ''}
       </tr>`;
     }).join('');
     const newRow = canEdit ? `<tr class="attach-row attach-row-new" data-attachment-row data-attachment-id="">
       <td class="attach-cell-label"><input type="text" class="attach-cell" data-attach-field="label" placeholder="Add new…"></td>
       <td class="attach-cell-content"><textarea class="attach-cell" data-attach-field="content" rows="3" placeholder="URL or text (simple HTML)"></textarea></td>
+      <td class="attach-cell-action"><button type="button" class="compact-btn" data-action="save-attachment-row" title="Add this attachment (or tap outside the fields)">Add</button></td>
     </tr>` : '';
     return `<div class="pane-region-scroll attachments-table-scroll"><table class="data-table attachments-table">
-      <thead><tr><th>Label</th><th>Content</th></tr></thead>
+      <thead><tr><th>Label</th><th>Content</th>${canEdit ? '<th class="attach-action-head"></th>' : ''}</tr></thead>
       <tbody>${newRow}${rows}</tbody>
     </table></div>`;
   }
@@ -2417,7 +2415,7 @@
         <details ${paneDetailsAttrs(state, 'mr-attachments', { extraClass: 'tint-assets' })}>
           <summary>Attachments (${attachCount})</summary>
           <div class="pane-details-body">
-            <p class="meta">Preparation or follow-up links/text. Edit a cell and tab out to save. Leading spaces on URLs are stripped.</p>
+            <p class="meta">Preparation or follow-up links/text. On a phone, tap <strong>Add</strong> or <strong>Save</strong> (or tap outside the field). Leading spaces on URLs are stripped.</p>
             ${canEditDesc || attachCount ? renderAttachmentsTable(m, state, attendee) : '<p class="meta">No attachments yet.</p>'}
           </div>
         </details>
@@ -2488,9 +2486,11 @@
         <div class="pane-title-row row">
           <p class="meta pane-lead"><strong>Don't forget to save after making changes.</strong> Meeting length, Calendar slot size, Bookable dates and hours.${canEdit ? '' : ' View only — organiser can edit.'}</p>
         </div>
-        ${canEdit && !m.attendees.length ? `<div class="row">
-          <button type="button" class="btn-nav compact-btn" data-action="tab" data-tab="getting-started">Back to Getting started</button>
-          <button type="button" class="btn-nav compact-btn" data-action="tab" data-tab="attendees">Next step: Attendees →</button>
+        ${canEdit ? `<div class="row">
+          <button type="button" class="btn-nav compact-btn" data-action="tab" data-tab="getting-started">Getting started</button>
+          ${!m.attendees.length
+            ? `<button type="button" class="btn-nav compact-btn" data-action="tab" data-tab="attendees">Next step: Attendees →</button>`
+            : `<button type="button" class="btn-nav compact-btn" data-action="tab" data-tab="agenda">Next step: Meeting Resources →</button>`}
         </div>` : ''}
         <form id="update-settings-form" class="inline-form organizer-form" data-form="update-settings">
           <input type="hidden" name="timezone" value="${escapeHtml(mtz)}">
@@ -2570,9 +2570,16 @@
     const colCount = 6 + (showOrganiserCol ? 2 : 0);
     const regPaneId = standalone ? 'att-registered' : 'att-registered-cal';
 
+    const nextStep = signedIn
+      ? (attendee.is_organizer
+        ? `<button type="button" class="btn-nav compact-btn" data-action="tab" data-tab="options" title="Open Calendar Options">Next step: Calendar Options →</button>`
+        : `<button type="button" class="btn-nav compact-btn" data-action="tab" data-tab="calendar" title="Open My availability">Next step: My availability →</button>`)
+      : '';
     const identityBar = signedIn ? `<div class="row attendee-identity-bar">
       <button type="button" class="compact-btn" data-action="edit-attendee" title="Edit your display name, contact, or passcode">Edit identity</button>
       <button type="button" class="btn-cancel compact-btn" data-action="switch-user" title="Sign out on this browser">Switch user</button>
+      <button type="button" class="btn-nav compact-btn" data-action="tab" data-tab="getting-started" title="Open Getting started">Getting started</button>
+      ${nextStep}
     </div>` : '';
 
     const tableBlock = `
@@ -3469,16 +3476,20 @@
       if (kind === 'add-location') toast('Location saved');
       else if (kind === 'add-location-row') toast('Location(s) added');
       else if (kind === 'add-attendee') {
-        toast(state.attendeeId === data.attendee_id
-          ? 'You are signed in. Next: mark availability, then share the meeting link.'
+        const self = state.attendeeId === data.attendee_id;
+        const me = state.meet.attendees.find((a) => a.id === state.attendeeId);
+        toast(self
+          ? (me?.is_organizer
+            ? 'You are signed in as organiser. Next: Calendar Options (or Getting started).'
+            : 'You are signed in. Next: My availability (or Getting started).')
           : 'Attendee saved — you stay signed in as yourself.');
       }
       else if (kind === 'edit-attendee') toast(fd.get('clear_pin') === 'on' ? 'Passcode removed' : 'Your details were updated');
       else if (kind === 'confirm') toast('Meeting time agreed — status updated');
       else if (kind === 'update-settings') {
         toast(state.attendeeId
-          ? 'Calendar options saved.'
-          : 'Calendar options saved. Next: add yourself as attendee (or return to Getting started).');
+          ? 'Calendar options saved. Next: Meeting Resources (or Getting started).'
+          : 'Calendar options saved. Next: add yourself as attendee (or Getting started).');
       } else if (kind === 'update-description') toast('Description saved');
       else if (kind === 'update-agenda') toast('Agenda saved');
       else if (kind === 'update-notes') toast('Notes saved');
@@ -3624,6 +3635,17 @@
       const row = btn.closest('[data-location-row]');
       if (!row) return;
       await saveLocationRow(root, state, row);
+      return;
+    }
+
+    if (action === 'save-attachment-row') {
+      if (!state.attendeeId) {
+        toast('Sign in on Attendees first to save attachments', true);
+        return;
+      }
+      const row = btn.closest('[data-attachment-row]');
+      if (!row) return;
+      await saveAttachmentRow(root, state, row);
       return;
     }
 
@@ -4453,7 +4475,7 @@
     const m = state.meet;
     const dates = markedDatesInDisplayOrder(state, m);
     if (!dates.length) {
-      return { ok: false, message: 'Mark one or more day columns first, then Invert days' };
+      return { ok: false, message: 'Mark one or more day columns first, then Invert selection' };
     }
     const mtz = meetingTz(m);
     const hours = buildHours(m.day_start, m.day_end, m.slot_granularity_minutes);

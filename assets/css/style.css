@@ -98,7 +98,7 @@ input, textarea, select {
 button, .btn {
   border: none;
   border-radius: var(--btn-radius);
-  padding: 0.6rem 1rem;
+  padding: 0.3rem 0.55rem;
   background: var(--accent);
   color: #fff;
   cursor: pointer;
@@ -155,15 +155,23 @@ button.btn-disabled {
 
 .status-strip {
   display: flex;
-  flex-wrap: wrap;
-  align-items: baseline;
-  gap: 0.35rem 0.75rem;
-  margin: 0.35rem 0 0.25rem;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.2rem;
+  margin: 0;
   font-size: 0.88rem;
-  padding: 0.45rem 0.65rem;
+  padding: 0.35rem 0.55rem;
   background: #f8fafc;
   border: 1px solid var(--line);
   border-radius: var(--btn-radius);
+  min-width: 0;
+}
+
+.status-strip-line {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.25rem 0.65rem;
 }
 
 .status-strip .status-label {
@@ -488,7 +496,7 @@ button.linkish {
 .overview-panel .section-title:first-of-type { margin-top: 0; }
 
 .meet-title {
-  margin: 0;
+  margin: 0 0 0.35rem;
   font-size: 1.25rem;
   min-width: 0;
   max-width: 100%;
@@ -498,29 +506,33 @@ button.linkish {
   pointer-events: none;
   position: relative;
   z-index: 0;
-  grid-column: 1;
 }
 
-.sticky-head {
+.sticky-main-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
-  gap: 0.5rem 0.75rem;
+  gap: 0.4rem 0.65rem;
   min-width: 0;
   position: relative;
   z-index: 2;
 }
 
+.sticky-status-col {
+  min-width: 0;
+}
+
 .sticky-head-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.25rem;
   flex-shrink: 0;
-  flex-wrap: wrap;
-  justify-content: flex-end;
   position: relative;
   z-index: 10;
   isolation: isolate;
   pointer-events: auto;
-  grid-column: 2;
-  max-width: 100%;
+  max-width: 11rem;
 }
 
 .share-row { margin: 0.5rem 0; gap: 0.4rem; }
@@ -531,28 +543,20 @@ button.linkish {
   padding: 0.45rem 0.6rem;
 }
 
-.compact-btn { padding: 0.35rem 0.65rem; font-size: 0.82rem; }
+.compact-btn { padding: 0.2rem 0.4rem; font-size: 0.82rem; }
 
 .sticky-extras { display: block; }
-
-@media (min-width: 701px) {
-  .compact-btn[data-action="toggle-header"] { display: inline-block; }
-}
 
 @media (max-width: 700px) {
   .sticky-top-inner { padding: 0.5rem 0.65rem; }
   .meet-title { font-size: 1.05rem; }
   .tab { padding: 0.28rem 0.5rem; font-size: 0.72rem; }
-  .sticky-head {
-    grid-template-columns: 1fr;
-    gap: 0.35rem;
-  }
-  .meet-title,
-  .sticky-head-actions {
-    grid-column: 1;
+  .sticky-main-row {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.35rem 0.45rem;
   }
   .sticky-head-actions {
-    justify-content: flex-start;
+    max-width: 9.5rem;
   }
   .dashboard-nav {
     flex-wrap: wrap;
@@ -634,10 +638,8 @@ button.linkish {
 .add-attendee-form .span-full { grid-column: 1 / -1; }
 
 .signed-in-line {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.35rem;
+  display: inline;
+  font-size: 0.85rem;
 }
 
 .checkbox-label {
@@ -732,23 +734,18 @@ button.linkish {
   margin: 0;
 }
 
-.signed-in-banner {
-  margin: 0.25rem 0 0;
-  font-size: 0.85rem;
-}
-
 .header-help-btn,
-.header-toggle-btn,
 .sticky-head-actions .compact-btn {
   position: relative;
   z-index: 6;
   cursor: pointer;
   font-size: 0.78rem;
-  padding: 0.35rem 0.55rem;
+  padding: 0.2rem 0.4rem;
   line-height: 1.2;
-  min-height: 2rem;
+  min-height: 1.6rem;
   box-sizing: border-box;
-  align-self: center;
+  width: 100%;
+  text-align: center;
   pointer-events: auto;
 }
 
@@ -2394,8 +2391,19 @@ button.day-head-marked {
   line-height: 1.25;
 }
 
-.attach-cell-label { width: 28%; }
-.attach-cell-content { width: 72%; }
+.attach-cell-label { width: 26%; }
+.attach-cell-content { width: auto; }
+.attach-cell-action,
+.attach-action-head {
+  width: 4.5rem;
+  white-space: nowrap;
+  text-align: right;
+  vertical-align: top;
+}
+
+.loc-row-save-wrap {
+  margin-top: 0.25rem;
+}
 
 .attach-row-new td { background: #fafafa; }
 
