@@ -2399,13 +2399,15 @@
     const decisionsVal = drafts.decisions != null ? drafts.decisions : (m.decisions || []).join('\n');
     const notesVal = drafts.notes != null ? drafts.notes : (m.notes || '');
     const saveBtn = (formId) => `<button type="submit" form="${formId}" class="compact-btn">Save</button>`;
+    const saveRow = (formId) => (canEditDesc ? `<div class="pane-save-row pane-save-below-summary">${saveBtn(formId)}</div>` : '');
     const attachCount = (m.attachments || []).length;
 
     return `
       <section class="panel stack" id="meeting-agenda-pane">
         <p class="meta pane-lead">Description, agenda, decisions, notes, and attachments — pre- and post-meeting assets in one place.</p>
         <details ${paneDetailsAttrs(state, 'mr-description', { extraClass: 'tint-text' })}>
-          <summary class="pane-summary-with-save"><span>Description for attendees <span class="label-hint">(simple HTML — status bar &amp; Overview)</span></span>${canEditDesc ? saveBtn('form-update-description') : ''}</summary>
+          <summary>Description for attendees <span class="label-hint">(simple HTML — status bar &amp; Overview)</span></summary>
+          ${saveRow('form-update-description')}
           <div class="pane-details-body">
           <form class="inline-form" data-form="update-description" id="form-update-description">
             ${canEditDesc ? formatToolbar('organizer_intro', { withHelp: true, helpTopic: 'meeting description' }) : ''}
@@ -2415,7 +2417,8 @@
           </div>
         </details>
         <details ${paneDetailsAttrs(state, 'mr-agenda', { secondary: true, extraClass: 'tint-text' })}>
-          <summary class="pane-summary-with-save"><span>Agenda &amp; decisions <span class="label-hint">(each line is a bullet on Overview and status strip)</span></span>${canEditDesc ? saveBtn('form-update-agenda') : ''}</summary>
+          <summary>Agenda &amp; decisions <span class="label-hint">(each line is a bullet on Overview and status strip)</span></summary>
+          ${saveRow('form-update-agenda')}
           <div class="pane-details-body">
           <form class="inline-form" data-form="update-agenda" id="form-update-agenda">
             <label>Agenda<textarea name="agenda" rows="4">${escapeHtml(agendaVal)}</textarea></label>
@@ -2425,7 +2428,8 @@
           </div>
         </details>
         <details ${paneDetailsAttrs(state, 'mr-notes', { secondary: true, extraClass: 'tint-text' })}>
-          <summary class="pane-summary-with-save"><span>Notes <span class="label-hint">(shown on Overview under Agenda and decisions)</span></span>${canEditDesc ? saveBtn('form-update-notes') : ''}</summary>
+          <summary>Notes <span class="label-hint">(shown on Overview under Agenda and decisions)</span></summary>
+          ${saveRow('form-update-notes')}
           <div class="pane-details-body">
           <form class="inline-form" data-form="update-notes" id="form-update-notes">
             <label>Notes
@@ -2440,7 +2444,7 @@
         <details ${paneDetailsAttrs(state, 'mr-attachments', { extraClass: 'tint-assets' })}>
           <summary>Attachments (${attachCount})</summary>
           <div class="pane-details-body">
-            <p class="meta">Preparation or follow-up links/text. The top blank row adds a new attachment — tap <strong>Add</strong> under it (or tap outside the field). Leading spaces on URLs are stripped.</p>
+            <p class="meta">Preparation or follow-up links/text. Use the <strong>Add new…</strong> row at the top, then tap <strong>Add</strong> (or tap outside the field). Leading spaces on URLs are stripped.</p>
             ${canEditDesc || attachCount ? renderAttachmentsTable(m, state, attendee) : '<p class="meta">No attachments yet.</p>'}
           </div>
         </details>
